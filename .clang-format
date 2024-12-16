@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+AllowShortFunctionsOnASingleLine: false

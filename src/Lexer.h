@@ -51,6 +51,16 @@ class Token {
     }
 };
 
+/// @brief Represents a lexer that tokenizes source code into a sequence of
+/// tokens
+/// @details The `Lexer` class is responsible for tokenizing the input source
+/// code. It processes the source code character by character, recognizing
+/// patterns such as keywords, operators, literals, and identifiers, and
+/// generates the corresponding tokens. The class also tracks the current
+/// position in the source code (row and column) to aid in error reporting and
+/// debugging. This class is an essential component of the lexical analysis
+/// phase in a compiler, where the source code is divided into meaningful
+/// symbols for further parsing and compilation.
 class Lexer {
   public:
     Lexer(llvm::StringRef sourceCode);

@@ -4,16 +4,17 @@
 #pragma once
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
 
 enum class TokenType {
     Unknown = 0,
-    Number,      ///< 2
+    Number,      ///< literal number
     Minus,       ///< -
     Plus,        ///< +
     Star,        ///< *
     Slash,       ///< /
-    LeftParent,  ///< {
-    RightParent, ///< }
+    LeftParent,  ///< (
+    RightParent, ///< )
     Semi,        ///< ;
     Eof          ///< end of file
 };
@@ -24,14 +25,29 @@ enum class TokenType {
 /// associated value. This class is used for lexical analysis in a compiler.
 class Token {
   public:
-    int row, col;
     TokenType tokenTy;
-    int value;
+    int row;
+    int col;   ///< The line and column number of the token in the source code.
+    int value; ///< The value of the token, used when the TokenType is 'number'.
+    llvm::StringRef
+        content; ///< The textual content of the token in the source code.
 
+  public:
     Token() {
-        row = col = -1;
-        tokenTy   = TokenType::Unknown;
-        value     = __INT_MAX__;
+        row     = -1;
+        col     = -1;
+        tokenTy = TokenType::Unknown;
+        value   = 0;
+    }
+
+    void setMember(TokenType tokTy, const char *pos, int len, int val = 0) {
+        tokenTy = tokTy;
+        content = llvm::StringRef(pos, len);
+        value   = val;
+    }
+
+    void Dump() {
+        llvm::outs() << "[ row = " << row << ", col = " << col << " ]\n";
     }
 };
 

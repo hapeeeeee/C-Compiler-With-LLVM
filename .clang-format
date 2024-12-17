@@ -3,3 +3,8 @@ IndentWidth: 4
 AlignConsecutiveAssignments: true
 AlignTrailingComments: true
 AllowShortFunctionsOnASingleLine: false
+BinPackParameters: false
+AlwaysBreakAfterReturnType:     None
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true

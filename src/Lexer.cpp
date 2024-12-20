@@ -1,4 +1,4 @@
-#include "Lexer.h"
+#include "include/Lexer.h"
 
 Lexer::Lexer(llvm::StringRef sourceCode) {
     workPtr        = sourceCode.begin();

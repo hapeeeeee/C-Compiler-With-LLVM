@@ -3,7 +3,7 @@
 Expr::Expr() {
 }
 
-Factor::Factor(int num) : number(num) {
+FactorExpr::FactorExpr(int num) : number(num) {
 }
 
 BinaryExpr::BinaryExpr(std::shared_ptr<Expr> left, OpCode op, std::shared_ptr<Expr> right)

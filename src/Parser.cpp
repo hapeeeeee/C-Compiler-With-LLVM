@@ -4,6 +4,7 @@ Parser::Parser(Lexer &lex) : lexer(lex) {
     Advance();
 }
 
+/// @brief prog : (expr? ";")*
 std::shared_ptr<Program> Parser::ParserProgram() {
     std::vector<std::shared_ptr<Expr>> exprs;
     while (token.tokenTy != TokenType::Eof) {
@@ -18,49 +19,71 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     return program;
 }
 
-/**
-    prog   : (expr? ";")*
-    expr   : term(("+" | "-") term)* ;
-    term   : factor(("*" | "/") factor)* ;
-    factor : number | "(" expr")";
-    number : ([0-9])+;
- */
-
-// 解析表达式
+/// @brief expr : term(("+" | "-") term)*
 std::shared_ptr<Expr> Parser::ParserExpr() {
-    // 解析左侧表达式
     auto left = ParserTerm();
-    // 如果中间是加号或者减号 创建二元表达式
-    // 这里要一直判断，因为会遇到a+b+c+d...的情况
+    // a + b + c + d...
     while (token.tokenTy == TokenType::Plus || token.tokenTy == TokenType::Minus) {
         OpCode op;
         if (token.tokenTy == TokenType::Plus) {
-            op = OpCode::add;
+            op = OpCode::Add;
         } else {
-            op = OpCode::sub;
+            op = OpCode::Sub;
         }
         Advance();
         auto right   = ParserTerm();
         auto binExpr = std::make_shared<BinaryExpr>(left, op, right);
         left         = binExpr;
     }
-
-    // 返回新表达式
     return left;
 }
 
+/// @brief term  : factor(("*" | "/") factor)*
 std::shared_ptr<Expr> Parser::ParserTerm() {
+    auto left = ParserFactor();
+    // a * b * c * d...
+    while (token.tokenTy == TokenType::Star || token.tokenTy == TokenType::Slash) {
+        OpCode op;
+        if (token.tokenTy == TokenType::Star) {
+            op = OpCode::Mul;
+        } else {
+            op = OpCode::Div;
+        }
+        Advance();
+        auto right   = ParserFactor();
+        auto binExpr = std::make_shared<BinaryExpr>(left, op, right);
+        left         = binExpr;
+    }
+    return left;
 }
 
+/// @brief factor : number | "(" expr")";
 std::shared_ptr<Expr> Parser::ParserFactor() {
+    if (token.tokenTy == TokenType::LeftParent) {
+        Advance();
+        auto expr = ParserExpr();
+        assert(!IsExcept(TokenType::RightParent));
+        Advance();
+        return expr;
+    }
+
+    auto factorExpr = std::make_shared<FactorExpr>(token.value);
+    Advance();
+    return factorExpr;
 }
 
 bool Parser::IsExcept(TokenType tokTy) {
+    return token.tokenTy == tokTy;
 }
-// 消费这个Token
+
 bool Parser::Consume(TokenType tokTy) {
+    if (IsExcept(tokTy)) {
+        Advance();
+        return true;
+    }
+    return false;
 }
-// 前进一个Token
+
 void Parser::Advance() {
     lexer.NextToken(token);
 }

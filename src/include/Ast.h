@@ -5,10 +5,10 @@
 #include <memory>
 #include <vector>
 enum class OpCode {
-    add = 0,
-    sub,
-    mul,
-    div,
+    Add = 0,
+    Sub,
+    Mul,
+    Div,
 };
 
 class Expr {
@@ -18,12 +18,12 @@ class Expr {
     }
 };
 
-class Factor : public Expr {
+class FactorExpr : public Expr {
   public:
     int number;
 
   public:
-    Factor(int num);
+    FactorExpr(int num);
 };
 
 class BinaryExpr : public Expr {

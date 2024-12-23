@@ -4,6 +4,22 @@
 
 #include <memory>
 #include <vector>
+
+class Program;
+class Expr;
+class BinaryExpr;
+class FactorExpr;
+
+/// @brief
+class Visitor {
+  public:
+    virtual ~Visitor() {
+    }
+    virtual void VisitProgram(Program *program)          = 0;
+    virtual void VisitBinaryExpr(BinaryExpr *binaryExpr) = 0;
+    virtual void VisitFactorExpr(FactorExpr *factorExpr) = 0;
+};
+
 enum class OpCode {
     Add = 0,
     Sub,
@@ -13,8 +29,11 @@ enum class OpCode {
 
 class Expr {
   public:
-    Expr();
+    Expr() {
+    }
     virtual ~Expr() {
+    }
+    virtual void AcceptVisitor(Visitor *v) {
     }
 };
 
@@ -24,6 +43,9 @@ class FactorExpr : public Expr {
 
   public:
     FactorExpr(int num);
+    void AcceptVisitor(Visitor *v) override {
+        v->VisitFactorExpr(this);
+    }
 };
 
 class BinaryExpr : public Expr {
@@ -34,6 +56,9 @@ class BinaryExpr : public Expr {
 
   public:
     BinaryExpr(std::shared_ptr<Expr> left, OpCode op, std::shared_ptr<Expr> right);
+    void AcceptVisitor(Visitor *v) override {
+        v->VisitBinaryExpr(this);
+    }
 };
 
 class Program {
@@ -42,6 +67,9 @@ class Program {
 
   public:
     Program(std::vector<std::shared_ptr<Expr>> exprs);
+    void AcceptVisitor(Visitor *v) {
+        v->VisitProgram(this);
+    }
 };
 
 #endif // _AST_H_

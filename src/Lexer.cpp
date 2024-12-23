@@ -36,7 +36,7 @@ void Lexer::NextToken(Token &tok) {
     } else {
         switch (*workPtr) {
         case '+': {
-            tok.setMember(TokenType::Number, workPtr, 1);
+            tok.setMember(TokenType::Plus, workPtr, 1);
             workPtr++;
             break;
         }

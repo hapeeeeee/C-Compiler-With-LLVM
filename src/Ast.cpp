@@ -1,8 +1,5 @@
 #include "include/Ast.h"
 
-Expr::Expr() {
-}
-
 FactorExpr::FactorExpr(int num) : number(num) {
 }
 

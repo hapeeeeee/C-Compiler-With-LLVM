@@ -1,7 +1,11 @@
-#include "include/Lexer.h"
 #include "llvm/Support/ErrorOr.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include "include/CodeGen.h"
+#include "include/Lexer.h"
+#include "include/Parser.h"
+#include "include/PrintVisitor.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -20,10 +24,11 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
     Lexer lex(memBuf->getBuffer());
-    Token tok;
-    while (tok.tokenTy != TokenType::Eof) {
-        lex.NextToken(tok);
-        tok.Dump();
-    }
+
+    Parser parser(lex);
+    std::shared_ptr<Program> program = parser.ParserProgram();
+    // PrintVisitor printVisitor(parser.ParserProgram());
+    CodeGen codeGen(program);
+
     return 0;
 }

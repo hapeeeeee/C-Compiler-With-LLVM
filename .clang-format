@@ -9,3 +9,4 @@ AlwaysBreakAfterReturnType:     None
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
+BinPackArguments: false

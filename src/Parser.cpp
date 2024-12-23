@@ -62,7 +62,7 @@ std::shared_ptr<Expr> Parser::ParserFactor() {
     if (token.tokenTy == TokenType::LeftParent) {
         Advance();
         auto expr = ParserExpr();
-        assert(!IsExcept(TokenType::RightParent));
+        assert(IsExcept(TokenType::RightParent));
         Advance();
         return expr;
     }

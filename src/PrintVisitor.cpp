@@ -5,16 +5,17 @@ PrintVisitor::PrintVisitor(std::shared_ptr<Program> program) {
     VisitProgram(program.get());
 }
 
-void PrintVisitor::VisitProgram(Program *program) {
+llvm::Value *PrintVisitor::VisitProgram(Program *program) {
     llvm::outs() << "Program :\n--------------------\n\n";
     for (std::shared_ptr<Expr> &expr : program->exprs) {
         expr->AcceptVisitor(this);
         llvm::outs() << "\n";
     }
     llvm::outs() << "\n-----------------------------\n";
+    return nullptr;
 }
 
-void PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
+llvm::Value *PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     binaryExpr->leftExpr->AcceptVisitor(this);
     binaryExpr->rightExpr->AcceptVisitor(this);
 
@@ -35,8 +36,10 @@ void PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         break;
     }
     llvm::outs() << " ";
+    return nullptr;
 }
 
-void PrintVisitor::VisitFactorExpr(FactorExpr *factorExpr) {
+llvm::Value *PrintVisitor::VisitFactorExpr(FactorExpr *factorExpr) {
     llvm::outs() << factorExpr->number << " ";
+    return nullptr;
 }

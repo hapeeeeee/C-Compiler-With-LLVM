@@ -6,9 +6,9 @@
 class PrintVisitor : public Visitor {
   public:
     PrintVisitor(std::shared_ptr<Program> program);
-    void VisitProgram(Program *program) override;
-    void VisitBinaryExpr(BinaryExpr *binaryExpr) override;
-    void VisitFactorExpr(FactorExpr *factorExpr) override;
+    llvm::Value *VisitProgram(Program *program) override;
+    llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
+    llvm::Value *VisitFactorExpr(FactorExpr *factorExpr) override;
 };
 
 #endif // _PRINTVISITOR_H_

@@ -2,6 +2,7 @@
 #ifndef _AST_H_
 #define _AST_H_
 
+#include "llvm/IR/Value.h"
 #include <memory>
 #include <vector>
 
@@ -15,9 +16,9 @@ class Visitor {
   public:
     virtual ~Visitor() {
     }
-    virtual void VisitProgram(Program *program)          = 0;
-    virtual void VisitBinaryExpr(BinaryExpr *binaryExpr) = 0;
-    virtual void VisitFactorExpr(FactorExpr *factorExpr) = 0;
+    virtual llvm::Value *VisitProgram(Program *program)          = 0;
+    virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) = 0;
+    virtual llvm::Value *VisitFactorExpr(FactorExpr *factorExpr) = 0;
 };
 
 enum class OpCode {
@@ -33,7 +34,8 @@ class Expr {
     }
     virtual ~Expr() {
     }
-    virtual void AcceptVisitor(Visitor *v) {
+    virtual llvm::Value *AcceptVisitor(Visitor *v) {
+        return nullptr;
     }
 };
 
@@ -43,8 +45,8 @@ class FactorExpr : public Expr {
 
   public:
     FactorExpr(int num);
-    void AcceptVisitor(Visitor *v) override {
-        v->VisitFactorExpr(this);
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitFactorExpr(this);
     }
 };
 
@@ -56,8 +58,8 @@ class BinaryExpr : public Expr {
 
   public:
     BinaryExpr(std::shared_ptr<Expr> left, OpCode op, std::shared_ptr<Expr> right);
-    void AcceptVisitor(Visitor *v) override {
-        v->VisitBinaryExpr(this);
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitBinaryExpr(this);
     }
 };
 
@@ -67,8 +69,8 @@ class Program {
 
   public:
     Program(std::vector<std::shared_ptr<Expr>> exprs);
-    void AcceptVisitor(Visitor *v) {
-        v->VisitProgram(this);
+    llvm::Value *AcceptVisitor(Visitor *v) {
+        return v->VisitProgram(this);
     }
 };
 

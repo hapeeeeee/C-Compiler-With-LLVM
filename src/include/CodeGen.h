@@ -9,9 +9,9 @@
 class CodeGen : public Visitor {
   public:
     CodeGen(std::shared_ptr<Program> program);
-    void VisitProgram(Program *program) override;
-    void VisitBinaryExpr(BinaryExpr *binaryExpr) override;
-    void VisitFactorExpr(FactorExpr *factorExpr) override;
+    llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
+    llvm::Value *VisitProgram(Program *program) override;
+    llvm::Value *VisitFactorExpr(FactorExpr *factorExpr) override;
 
   private:
     llvm::LLVMContext llvmContext;

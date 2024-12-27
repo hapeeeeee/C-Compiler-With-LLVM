@@ -22,8 +22,7 @@ llvm::Value *CodeGen::VisitProgram(Program *program) {
 
     for (std::shared_ptr<Expr> &expr : program->exprs) {
         llvm::Value *exprRet = expr->AcceptVisitor(this);
-        irBuilder.CreateCall(printfFunc,
-                             {irBuilder.CreateGlobalStringPtr("exprRet: %d\n"), exprRet});
+        irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("exprRet: %d\n"), exprRet});
     }
 
     irBuilder.CreateRet(irBuilder.getInt32(0));

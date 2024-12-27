@@ -1,0 +1,12 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+AllowShortFunctionsOnASingleLine: false
+BinPackParameters: false
+AlwaysBreakAfterReturnType:     None
+AllowAllArgumentsOnNextLine: true
+AllowAllConstructorInitializersOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+BinPackArguments: false

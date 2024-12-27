@@ -8,13 +8,17 @@
 enum class TokenType {
     Unknown = 0,
     Number,      ///< literal number
+    Equal,       ///< =
     Minus,       ///< -
     Plus,        ///< +
     Star,        ///< *
     Slash,       ///< /
     LeftParent,  ///< (
     RightParent, ///< )
+    Comma,       ///< ,
     Semi,        ///< ;
+    Identifier,  ///< variable name
+    KW_int,      ///< int
     Eof          ///< end of file
 };
 
@@ -45,7 +49,7 @@ class Token {
     }
 
     void Dump() {
-        llvm::outs() << "[ row = " << row << ", col = " << col << " ]\n";
+        llvm::outs() << "[ " << content << ", row = " << row << ", col = " << col << " ]\n";
     }
 };
 
@@ -60,6 +64,7 @@ class Lexer {
   public:
     Lexer(llvm::StringRef sourceCode);
     void NextToken(Token &tok);
+    void Run(Token &tok);
 
   private:
     const char *workPtr;        ///< Pointer to the current character in the source
@@ -70,8 +75,10 @@ class Lexer {
     int workRow;                ///< Line number in the source code currently being scanned
 
   private:
+    void KeyWordHandle(Token &tok);
     bool IsWhiteSpace(char ch);
     bool IsDigit(char ch);
+    bool IsLetter(char ch);
 };
 
 #endif // _LEXER_H_

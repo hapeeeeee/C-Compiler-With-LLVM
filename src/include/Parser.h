@@ -7,13 +7,17 @@
 
 /// @brief Syntax analyzer that uses recursive descent to parse input tokens into C language syntax
 /// @details The current grammar rules are as follows:
-/// +-----------------------------------------+
-/// | prog   : (expr? ";")*                   |
-/// | expr   : term(("+" | "-") term)* ;      |
-/// | term   : factor(("*" | "/") factor)* ;  |
-/// | factor : number | "(" expr ")" ;        |
-/// | number : ([0-9])+ ;                     |
-/// +-----------------------------------------+
+/// +-----------------------------------------------------+
+/// |prog       : (decl-stmt | expr-stmt )*               |
+/// |decl-stam  : type-decl identifier ("=" expr)*  ";"   |
+/// |type-decl  : "int"                                   |
+/// |expr-stmt  : expr? ";"                               |
+/// |expr       : term(("+" | "-") term)*                 |
+/// |term       : factor(("*" | "/") factor)*             |
+/// |factor     : identifier | number | "(" expr")"       |
+/// |number     : ([0-9])+                                |
+/// |identifier : (a-zA-Z_)(a-zA-Z0-9_)*                  |
+/// +-----------------------------------------------------+
 /// The grammar rules can also be referenced in bnf/bnf.txt
 class Parser {
   public:
@@ -25,9 +29,10 @@ class Parser {
     Token token; ///< The current token
 
   private:
-    std::shared_ptr<Expr> ParserExpr();
-    std::shared_ptr<Expr> ParserTerm();
-    std::shared_ptr<Expr> ParserFactor();
+    std::vector<std::shared_ptr<ASTNode>> ParserDecl();
+    std::shared_ptr<ASTNode> ParserExpr();
+    std::shared_ptr<ASTNode> ParserTerm();
+    std::shared_ptr<ASTNode> ParserFactor();
 
   private:
     /// @brief Checks if the current token is the expected token without consuming it

@@ -20,15 +20,23 @@ llvm::Value *CodeGen::VisitProgram(Program *program) {
     BasicBlock *entryBB = BasicBlock::Create(llvmContext, "entry", mainFunc);
     irBuilder.SetInsertPoint(entryBB);
 
-    for (std::shared_ptr<Expr> &expr : program->exprs) {
-        llvm::Value *exprRet = expr->AcceptVisitor(this);
-        irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("exprRet: %d\n"), exprRet});
+    for (std::shared_ptr<ASTNode> &stmt : program->stmts) {
+        llvm::Value *stmtRet = stmt->AcceptVisitor(this);
+        irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("exprRet: %d\n"), stmtRet});
     }
 
     irBuilder.CreateRet(irBuilder.getInt32(0));
 
     verifyFunction(*mainFunc);
     llvmModule->print(llvm::outs(), nullptr);
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
+    // if (variableDecl->cType == CType::getIntTy()) {
+    //     llvm::outs() << "int " << variableDecl->name << ";\n";
+    // }
+
     return nullptr;
 }
 
@@ -55,6 +63,14 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     return nullptr;
 }
 
-llvm::Value *CodeGen::VisitFactorExpr(FactorExpr *factorExpr) {
-    return irBuilder.getInt32(factorExpr->number);
+llvm::Value *CodeGen::VisitNumberExpr(NumberExpr *numberExpr) {
+    return irBuilder.getInt32(numberExpr->number);
+}
+
+llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitAssignExpr(AssignExpr *assignExpr) {
+    return nullptr;
 }

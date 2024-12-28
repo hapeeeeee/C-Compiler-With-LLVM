@@ -7,8 +7,11 @@ class PrintVisitor : public Visitor {
   public:
     PrintVisitor(std::shared_ptr<Program> program);
     llvm::Value *VisitProgram(Program *program) override;
+    llvm::Value *VisitVariableDecl(VariableDecl *VariableDecl) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
-    llvm::Value *VisitFactorExpr(FactorExpr *factorExpr) override;
+    llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
+    llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
+    llvm::Value *VisitAssignExpr(AssignExpr *assignExpr) override;
 };
 
 #endif // _PRINTVISITOR_H_

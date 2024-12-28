@@ -1,4 +1,4 @@
-prog       : (decl-stmt | expr-stmt)*
+prog       : (decl-stmt | expr-stmt )*
 decl-stam  : type-decl identifier ("=" expr)* ";"
 type-decl  : "int"
 expr-stmt  : expr? ";"

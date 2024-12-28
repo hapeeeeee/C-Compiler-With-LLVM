@@ -31,7 +31,8 @@ void Lexer::NextToken(Token &tok) {
             number = number * 10 + (*workPtr - '0');
             workPtr++;
         }
-        tok.setMember(TokenType::Number, tokenStart, workPtr - tokenStart, number);
+        tok.setMember(
+            TokenType::Number, tokenStart, workPtr - tokenStart, number, CType::getIntTy());
     } else if (IsLetter(*workPtr)) {
         while (IsLetter(*workPtr)) {
             workPtr++;

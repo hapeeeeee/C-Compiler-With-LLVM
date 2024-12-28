@@ -2,6 +2,7 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
+#include "CType.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -29,6 +30,7 @@ enum class TokenType {
 class Token {
   public:
     TokenType tokenTy;
+    CType *cType;
     int row;
     int col;                 ///< The line and column number of the token in the source code.
     int value;               ///< The value of the token, used when the TokenType is 'number'.
@@ -42,10 +44,11 @@ class Token {
         value   = 0;
     }
 
-    void setMember(TokenType tokTy, const char *pos, int len, int val = 0) {
+    void setMember(TokenType tokTy, const char *pos, int len, int val = 0, CType *cTy = nullptr) {
         tokenTy = tokTy;
         content = llvm::StringRef(pos, len);
         value   = val;
+        cType   = cTy;
     }
 
     void Dump() {

@@ -25,10 +25,13 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
     Lexer lex(memBuf->getBuffer());
 
+    // Token tok;
+    // lex.Run(tok);
+
     Parser parser(lex);
     std::shared_ptr<Program> program = parser.ParserProgram();
-    // PrintVisitor printVisitor(parser.ParserProgram());
-    CodeGen codeGen(program);
+    PrintVisitor printVisitor(program);
+    // CodeGen codeGen(program);
 
     return 0;
 }

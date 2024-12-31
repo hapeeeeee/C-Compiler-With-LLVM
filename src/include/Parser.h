@@ -4,6 +4,7 @@
 
 #include "Ast.h"
 #include "Lexer.h"
+#include "Sema.h"
 
 /// @brief Syntax analyzer that uses recursive descent to parse input tokens into C language syntax
 /// @details The current grammar rules are as follows:
@@ -21,11 +22,12 @@
 /// The grammar rules can also be referenced in bnf/bnf.txt
 class Parser {
   public:
-    Parser(Lexer &lex);
+    Parser(Lexer &lex, Sema &sema);
     std::shared_ptr<Program> ParserProgram();
 
   private:
     Lexer &lexer;
+    Sema &sema;
     Token token; ///< The current token
 
   private:

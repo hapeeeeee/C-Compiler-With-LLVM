@@ -54,7 +54,7 @@ llvm::Value *PrintVisitor::VisitNumberExpr(NumberExpr *numberExpr) {
 }
 
 llvm::Value *PrintVisitor::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
-    llvm::outs() << variableAssessExpr->name << " ";
+    llvm::outs() << variableAssessExpr->name;
     return nullptr;
 }
 

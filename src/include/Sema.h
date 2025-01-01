@@ -15,6 +15,8 @@ class Sema {
     std::shared_ptr<ASTNode> SemaAssignExprNode(std::shared_ptr<ASTNode> left,
                                                 std::shared_ptr<ASTNode> right);
     std::shared_ptr<ASTNode> SemaVariableAccessExprNode(CType *cType, Token &tok);
+    std::shared_ptr<ASTNode>
+    SemaBinaryExprNode(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right);
 };
 
 #endif // _SEMA_H_

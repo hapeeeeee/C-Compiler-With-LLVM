@@ -20,7 +20,7 @@ void Scope::AddSymbol(llvm::StringRef name, SymbolKind symbolKind, CType *cType)
 std::shared_ptr<Symbol> Scope::FindVarSymbol(llvm::StringRef name) {
     for (auto it = envs.rbegin(); it != envs.rend(); it++) {
         llvm::StringMap<std::shared_ptr<Symbol>> &table = (*it)->variableSymbolTable;
-        if (table.count(name) > 1) {
+        if (table.count(name) > 0) {
             return table[name];
         }
     }

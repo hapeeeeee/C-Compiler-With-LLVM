@@ -75,7 +75,7 @@ class VariableDecl : public ASTNode {
         return v->VisitVariableDecl(this);
     }
 
-    static bool ClassOf(ASTNode *node) {
+    static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_VariableDecl;
     }
 };
@@ -102,7 +102,7 @@ class BinaryExpr : public ASTNode {
         return v->VisitBinaryExpr(this);
     }
 
-    static bool ClassOf(ASTNode *node) {
+    static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_BinaryExpr;
     }
 };
@@ -119,7 +119,7 @@ class NumberExpr : public ASTNode {
         return v->VisitNumberExpr(this);
     }
 
-    static bool ClassOf(ASTNode *node) {
+    static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_NumberExpr;
     }
 };
@@ -136,7 +136,7 @@ class VariableAssessExpr : public ASTNode {
         return v->VisitVariableAssessExpr(this);
     }
 
-    static bool ClassOf(ASTNode *node) {
+    static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_VariableAssessExpr;
     }
 };
@@ -155,7 +155,7 @@ class AssignExpr : public ASTNode {
         return v->VisitAssignExpr(this);
     }
 
-    static bool ClassOf(ASTNode *node) {
+    static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_AssignExpr;
     }
 };

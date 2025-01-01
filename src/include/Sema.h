@@ -12,7 +12,9 @@ class Sema {
 
   public:
     std::shared_ptr<ASTNode> SemaVariableDeclNode(CType *cType, Token &tok);
-    // std::shared_ptr<ASTNode> SemaBinaryExprNode(VariableDecl);
+    std::shared_ptr<ASTNode> SemaAssignExprNode(std::shared_ptr<ASTNode> left,
+                                                std::shared_ptr<ASTNode> right);
+    std::shared_ptr<ASTNode> SemaVariableAccessExprNode(CType *cType, Token &tok);
 };
 
 #endif // _SEMA_H_

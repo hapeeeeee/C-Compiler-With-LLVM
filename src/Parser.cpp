@@ -31,17 +31,17 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDecl() {
     std::vector<std::shared_ptr<ASTNode>> declArr;
     // int a = 1, c = 2, d;
     while (token.tokenTy != TokenType::Semi) {
-        auto variableDecl = sema.SemaVariableDeclNode(cTy, token);
+        Token variableToken = token;
+        auto variableDecl   = sema.SemaVariableDeclNode(cTy, token);
         declArr.push_back(variableDecl);
-        llvm::StringRef variableName = token.content;
+        llvm::StringRef variableName = variableToken.content;
         assert(Consume(TokenType::Identifier));
 
         if (token.tokenTy == TokenType::Equal) {
             Advance();
-            auto left       = std::make_shared<VariableAssessExpr>();
-            left->name      = variableName;
+            auto left       = sema.SemaVariableAccessExprNode(cTy, variableToken);
             auto right      = ParserExpr();
-            auto assignExpr = std::make_shared<AssignExpr>(left, right);
+            auto assignExpr = sema.SemaAssignExprNode(left, right);
             declArr.push_back(assignExpr);
         }
 

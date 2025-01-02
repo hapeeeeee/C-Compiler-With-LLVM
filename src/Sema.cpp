@@ -35,7 +35,17 @@ std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(CType *cType, Token &t
 
     auto expr   = std::make_shared<VariableAssessExpr>();
     expr->name  = tok.content;
-    expr->cType = cType;
+    expr->cType = symbol->cType;
+    return expr;
+}
 
+std::shared_ptr<ASTNode>
+Sema::SemaBinaryExprNode(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right) {
+    return std::make_shared<BinaryExpr>(left, op, right);
+}
+
+std::shared_ptr<ASTNode> Sema::SemaNumberExprNode(CType *cType, Token &tok) {
+    auto expr   = std::make_shared<NumberExpr>(tok.value);
+    expr->cType = cType;
     return expr;
 }

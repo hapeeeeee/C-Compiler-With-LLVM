@@ -65,8 +65,9 @@ std::shared_ptr<ASTNode> Parser::ParserExpr() {
             op = OpCode::Sub;
         }
         Advance();
+
         auto right   = ParserTerm();
-        auto binExpr = std::make_shared<BinaryExpr>(left, op, right);
+        auto binExpr = sema.SemaBinaryExprNode(left, op, right);
         left         = binExpr;
     }
     return left;
@@ -85,7 +86,7 @@ std::shared_ptr<ASTNode> Parser::ParserTerm() {
         }
         Advance();
         auto right   = ParserFactor();
-        auto binExpr = std::make_shared<BinaryExpr>(left, op, right);
+        auto binExpr = sema.SemaBinaryExprNode(left, op, right);
         left         = binExpr;
     }
     return left;
@@ -100,13 +101,11 @@ std::shared_ptr<ASTNode> Parser::ParserFactor() {
         Advance();
         return expr;
     } else if (token.tokenTy == TokenType::Identifier) {
-        auto factorExpr  = std::make_shared<VariableAssessExpr>();
-        factorExpr->name = token.content;
+        auto factorExpr = sema.SemaVariableAccessExprNode(token.cType, token);
         Advance();
         return factorExpr;
     } else {
-        auto factorExpr   = std::make_shared<NumberExpr>(token.value);
-        factorExpr->cType = token.cType;
+        auto factorExpr = sema.SemaNumberExprNode(token.cType, token);
         Advance();
         return factorExpr;
     }

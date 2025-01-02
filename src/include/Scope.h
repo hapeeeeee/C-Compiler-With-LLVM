@@ -15,11 +15,11 @@ class Symbol {
     Symbol(llvm::StringRef name, SymbolKind symbolKind, CType *cType)
         : name(name), symbolKind(symbolKind), cType(cType) {
     }
+    CType *cType;
 
   private:
     llvm::StringRef name;
     SymbolKind symbolKind;
-    CType *cType;
 };
 
 class Env {

@@ -6,6 +6,7 @@
 #include "include/Lexer.h"
 #include "include/Parser.h"
 #include "include/PrintVisitor.h"
+#include "include/Sema.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -24,10 +25,12 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
     Lexer lex(memBuf->getBuffer());
-
-    Parser parser(lex);
+    // Token tok;
+    // lex.Run(tok);
+    Sema sema;
+    Parser parser(lex, sema);
     std::shared_ptr<Program> program = parser.ParserProgram();
-    // PrintVisitor printVisitor(parser.ParserProgram());
+    // PrintVisitor printVisitor(program);
     CodeGen codeGen(program);
 
     return 0;

@@ -20,12 +20,11 @@ llvm::Value *CodeGen::VisitProgram(Program *program) {
     BasicBlock *entryBB = BasicBlock::Create(llvmContext, "entry", mainFunc);
     irBuilder.SetInsertPoint(entryBB);
 
-    for (std::shared_ptr<Expr> &expr : program->exprs) {
-        llvm::Value *exprRet = expr->AcceptVisitor(this);
-        irBuilder.CreateCall(printfFunc,
-                             {irBuilder.CreateGlobalStringPtr("exprRet: %d\n"), exprRet});
+    llvm::Value *lastVal;
+    for (std::shared_ptr<ASTNode> &stmt : program->stmts) {
+        lastVal = stmt->AcceptVisitor(this);
     }
-
+    irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("lastVal: %d\n"), lastVal});
     irBuilder.CreateRet(irBuilder.getInt32(0));
 
     verifyFunction(*mainFunc);
@@ -48,7 +47,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         return irBuilder.CreateNSWMul(left, right);
         break;
     case OpCode::Div:
-        return irBuilder.CreateNSWAdd(left, right);
+        return irBuilder.CreateSDiv(left, right);
         break;
     default:
         break;
@@ -56,6 +55,34 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     return nullptr;
 }
 
-llvm::Value *CodeGen::VisitFactorExpr(FactorExpr *factorExpr) {
-    return irBuilder.getInt32(factorExpr->number);
+llvm::Value *CodeGen::VisitNumberExpr(NumberExpr *numberExpr) {
+    return irBuilder.getInt32(numberExpr->number);
+}
+
+llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
+    llvm::Type *ty = nullptr;
+    if (variableDecl->cType == CType::getIntTy()) {
+        ty = irBuilder.getInt32Ty();
+    }
+    llvm::Value *value = irBuilder.CreateAlloca(ty, nullptr, variableDecl->name);
+    varAddrMap.insert({variableDecl->name, value});
+    return value;
+}
+
+llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
+    llvm::Value *value = varAddrMap[variableAssessExpr->name];
+
+    llvm::Type *ty = nullptr;
+    if (variableAssessExpr->cType == CType::getIntTy()) {
+        ty = irBuilder.getInt32Ty();
+    }
+    return irBuilder.CreateLoad(ty, value, variableAssessExpr->name);
+}
+
+llvm::Value *CodeGen::VisitAssignExpr(AssignExpr *assignExpr) {
+    auto leftExpr                      = assignExpr->leftExpr;
+    VariableAssessExpr *leftAccessExpr = (VariableAssessExpr *)leftExpr.get();
+    llvm::Value *leftValueAddr         = varAddrMap[leftAccessExpr->name];
+    llvm::Value *rightValue            = assignExpr->rightExpr->AcceptVisitor(this);
+    return irBuilder.CreateStore(rightValue, leftValueAddr);
 }

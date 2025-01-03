@@ -9,14 +9,19 @@
 class CodeGen : public Visitor {
   public:
     CodeGen(std::shared_ptr<Program> program);
-    llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value *VisitProgram(Program *program) override;
-    llvm::Value *VisitFactorExpr(FactorExpr *factorExpr) override;
+    llvm::Value *VisitVariableDecl(VariableDecl *VariableDecl) override;
+    llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
+    llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
+    llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
+    llvm::Value *VisitAssignExpr(AssignExpr *assignExpr) override;
 
   private:
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> irBuilder{llvmContext};
     std::shared_ptr<llvm::Module> llvmModule;
+
+    llvm::StringMap<llvm::Value *> varAddrMap;
 };
 
 #endif // _CODEGEN_H_

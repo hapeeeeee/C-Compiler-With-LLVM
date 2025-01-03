@@ -2,23 +2,82 @@
 #ifndef _AST_H_
 #define _AST_H_
 
+#include "CType.h"
 #include "llvm/IR/Value.h"
 #include <memory>
 #include <vector>
 
 class Program;
-class Expr;
+class ASTNode;
+class VariableDecl;
 class BinaryExpr;
-class FactorExpr;
+class NumberExpr;
+class VariableAssessExpr;
+class AssignExpr;
 
 /// @brief
 class Visitor {
   public:
     virtual ~Visitor() {
     }
-    virtual llvm::Value *VisitProgram(Program *program)          = 0;
-    virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) = 0;
-    virtual llvm::Value *VisitFactorExpr(FactorExpr *factorExpr) = 0;
+    virtual llvm::Value *VisitProgram(Program *program)                                  = 0;
+    virtual llvm::Value *VisitVariableDecl(VariableDecl *variableDecl)                   = 0;
+    virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
+    virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
+    virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
+    virtual llvm::Value *VisitAssignExpr(AssignExpr *assignExpr)                         = 0;
+};
+
+class Program {
+  public:
+    std::vector<std::shared_ptr<ASTNode>> stmts;
+
+  public:
+    Program(std::vector<std::shared_ptr<ASTNode>> stmts);
+    llvm::Value *AcceptVisitor(Visitor *v) {
+        return v->VisitProgram(this);
+    }
+};
+
+class ASTNode {
+  public:
+    enum Nodekind {
+        ND_VariableDecl = 0,
+        ND_BinaryExpr,
+        ND_NumberExpr,
+        ND_VariableAssessExpr,
+        ND_AssignExpr,
+    };
+
+  public:
+    CType *cType;
+    Nodekind nodeKind;
+
+  public:
+    ASTNode(Nodekind kind) : nodeKind(kind) {
+    }
+    virtual ~ASTNode() {
+    }
+    virtual llvm::Value *AcceptVisitor(Visitor *v) {
+        return nullptr;
+    }
+};
+
+class VariableDecl : public ASTNode {
+  public:
+    llvm::StringRef name;
+
+  public:
+    VariableDecl() : ASTNode(Nodekind::ND_VariableDecl) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitVariableDecl(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_VariableDecl;
+    }
 };
 
 enum class OpCode {
@@ -28,49 +87,76 @@ enum class OpCode {
     Div,
 };
 
-class Expr {
+class BinaryExpr : public ASTNode {
   public:
-    Expr() {
+    OpCode op;
+    std::shared_ptr<ASTNode> leftExpr;
+    std::shared_ptr<ASTNode> rightExpr;
+
+  public:
+    BinaryExpr(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right)
+        : leftExpr(left), op(op), rightExpr(right), ASTNode(Nodekind::ND_BinaryExpr) {
     }
-    virtual ~Expr() {
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitBinaryExpr(this);
     }
-    virtual llvm::Value *AcceptVisitor(Visitor *v) {
-        return nullptr;
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_BinaryExpr;
     }
 };
 
-class FactorExpr : public Expr {
+class NumberExpr : public ASTNode {
   public:
     int number;
 
   public:
-    FactorExpr(int num);
+    NumberExpr(int num) : number(num), ASTNode(Nodekind::ND_NumberExpr) {
+    }
+
     llvm::Value *AcceptVisitor(Visitor *v) override {
-        return v->VisitFactorExpr(this);
+        return v->VisitNumberExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_NumberExpr;
     }
 };
 
-class BinaryExpr : public Expr {
+class VariableAssessExpr : public ASTNode {
   public:
-    OpCode op;
-    std::shared_ptr<Expr> leftExpr;
-    std::shared_ptr<Expr> rightExpr;
+    llvm::StringRef name;
 
   public:
-    BinaryExpr(std::shared_ptr<Expr> left, OpCode op, std::shared_ptr<Expr> right);
+    VariableAssessExpr() : ASTNode(Nodekind::ND_VariableAssessExpr) {
+    }
+
     llvm::Value *AcceptVisitor(Visitor *v) override {
-        return v->VisitBinaryExpr(this);
+        return v->VisitVariableAssessExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_VariableAssessExpr;
     }
 };
 
-class Program {
+class AssignExpr : public ASTNode {
   public:
-    std::vector<std::shared_ptr<Expr>> exprs;
+    std::shared_ptr<ASTNode> leftExpr;
+    std::shared_ptr<ASTNode> rightExpr;
 
   public:
-    Program(std::vector<std::shared_ptr<Expr>> exprs);
-    llvm::Value *AcceptVisitor(Visitor *v) {
-        return v->VisitProgram(this);
+    AssignExpr(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right)
+        : leftExpr(left), rightExpr(right), ASTNode(Nodekind::ND_AssignExpr) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitAssignExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_AssignExpr;
     }
 };
 

@@ -68,8 +68,17 @@ class Lexer {
     Lexer(llvm::StringRef sourceCode);
     void NextToken(Token &tok);
     void Run(Token &tok);
+    void SaveState();
+    void RestoreState();
 
   private:
+    struct State {
+        const char *workPtr;
+        const char *workRowHeadPtr;
+        const char *eofPtr;
+        int workRow;
+    };
+    State state;                ///< Record Lexer State for LL(k)
     const char *workPtr;        ///< Pointer to the current character in the source
                                 ///< code being scanned
     const char *workRowHeadPtr; ///< Pointer to the start of the current line in

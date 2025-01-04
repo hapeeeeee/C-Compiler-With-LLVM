@@ -9,15 +9,18 @@
 /// @brief Syntax analyzer that uses recursive descent to parse input tokens into C language syntax
 /// @details The current grammar rules are as follows:
 /// +-----------------------------------------------------+
-/// |prog       : (decl-stmt | expr-stmt )*               |
-/// |decl-stam  : type-decl identifier ("=" expr)*  ";"   |
-/// |type-decl  : "int"                                   |
-/// |expr-stmt  : expr? ";"                               |
-/// |expr       : term(("+" | "-") term)*                 |
-/// |term       : factor(("*" | "/") factor)*             |
-/// |factor     : identifier | number | "(" expr")"       |
-/// |number     : ([0-9])+                                |
-/// |identifier : (a-zA-Z_)(a-zA-Z0-9_)*                  |
+/// | prog            : stmt*
+/// | stmt            : decl-stmt | expr-stmt | null-stmt
+/// | null-stmt       : ";"
+/// | decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
+/// | expr-stmt       : expr ";"
+/// | expr            : assign-expr | add-expr
+/// | assign-expr     : identifier "=" expr
+/// | add-expr        : mult-expr ( ("+" | "_") mult-expr)*
+/// | mult-expr       : primary-expr ( ("*" | "/") primary-expr)*
+/// | primary-expr    : identifier | number | "(" expr ")"
+/// | number          : ([0-9])+
+/// | identifier      : (a-zA-Z)(a-zA-Z0-9)*
 /// +-----------------------------------------------------+
 /// The grammar rules can also be referenced in bnf/bnf.txt
 class Parser {
@@ -31,8 +34,10 @@ class Parser {
     Token token; ///< The current token
 
   private:
-    std::vector<std::shared_ptr<ASTNode>> ParserDecl();
+    std::vector<std::shared_ptr<ASTNode>> ParserDeclStmt();
+    std::shared_ptr<ASTNode> ParserExprStmt();
     std::shared_ptr<ASTNode> ParserExpr();
+    std::shared_ptr<ASTNode> ParserAssignExpr();
     std::shared_ptr<ASTNode> ParserTerm();
     std::shared_ptr<ASTNode> ParserFactor();
 

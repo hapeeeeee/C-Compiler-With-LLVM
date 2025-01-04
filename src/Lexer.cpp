@@ -102,6 +102,20 @@ void Lexer::Run(Token &tok) {
     }
 }
 
+void Lexer::SaveState() {
+    state.eofPtr         = eofPtr;
+    state.workPtr        = workPtr;
+    state.workRow        = workRow;
+    state.workRowHeadPtr = workRowHeadPtr;
+}
+
+void Lexer::RestoreState() {
+    eofPtr         = state.eofPtr;
+    workPtr        = state.workPtr;
+    workRow        = state.workRow;
+    workRowHeadPtr = state.workRowHeadPtr;
+}
+
 void Lexer::KeyWordHandle(Token &tok) {
     if (tok.content == "int") {
         tok.tokenTy = TokenType::KW_int;

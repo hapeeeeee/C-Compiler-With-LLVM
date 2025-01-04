@@ -26,7 +26,7 @@ std::shared_ptr<ASTNode> Sema::SemaAssignExprNode(std::shared_ptr<ASTNode> left,
     return std::make_shared<AssignExpr>(left, right);
 }
 
-std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(CType *cType, Token &tok) {
+std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
     std::shared_ptr<Symbol> symbol = scope.FindVarSymbol(tok.content);
     if (!symbol) {
         llvm::errs() << "Error: use undefined variable: " << tok.content << ". row: " << tok.row

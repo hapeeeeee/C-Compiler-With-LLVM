@@ -35,7 +35,6 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDeclStmt() {
         Token variableToken = token;
         auto variableDecl   = sema.SemaVariableDeclNode(cTy, token);
         declArr.push_back(variableDecl);
-        llvm::StringRef variableName = variableToken.content;
         assert(Consume(TokenType::Identifier));
 
         if (token.tokenTy == TokenType::Equal) {
@@ -154,9 +153,17 @@ bool Parser::Consume(TokenType tokTy) {
         Advance();
         return true;
     }
+    GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr),
+                            diag::error_except,
+                            Token::GetSpellingText(tokTy),
+                            llvm::StringRef(token.ptr, token.length));
     return false;
 }
 
 void Parser::Advance() {
     lexer.NextToken(token);
+}
+
+Diagnostics &Parser::GetDiagnostics() {
+    return lexer.GetDiagnostics();
 }

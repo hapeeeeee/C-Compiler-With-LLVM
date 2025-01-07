@@ -3,6 +3,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "include/CodeGen.h"
+#include "include/Diagnostics.h"
 #include "include/Lexer.h"
 #include "include/Parser.h"
 #include "include/PrintVisitor.h"
@@ -23,8 +24,12 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
-    Lexer lex(memBuf->getBuffer());
+    llvm::SourceMgr mgr;
+    Diagnostics diag(mgr);
+    mgr.AddNewSourceBuffer(std::move(*buf), llvm::SMLoc());
+
+    // std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
+    Lexer lex(mgr, diag);
     // Token tok;
     // lex.Run(tok);
     Sema sema;

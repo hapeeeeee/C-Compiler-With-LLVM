@@ -10,6 +10,9 @@ enum class SymbolKind {
     LocalVariable = 0,
 };
 
+/// @brief Represents a symbol in C language.
+/// @details This class is used to describe a symbol in the program, such as variables, functions,
+/// or other named entities. Each symbol is associated with a name, a kind, and a type.
 class Symbol {
   public:
     Symbol(llvm::StringRef name, SymbolKind symbolKind, CType *cType)
@@ -27,6 +30,8 @@ class Env {
     llvm::StringMap<std::shared_ptr<Symbol>> variableSymbolTable;
 };
 
+/// @brief Represents an environment for managing symbols.
+/// @details This class contains a symbol table for storing and accessing variable symbols.
 class Scope {
   public:
     Scope();

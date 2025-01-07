@@ -6,6 +6,11 @@
 #include "Lexer.h"
 #include "Scope.h"
 
+/// @brief Performs semantic analysis for the program.
+/// @details The `Sema` class is responsible for performing semantic analysis on Abstract Syntax
+/// Tree (AST) nodes. It validates and processes various constructs in the program, such as variable
+/// declarations, expressions, and operations. It ensures that the program adheres to semantic rules
+/// and prepares the AST for further compilation stages.
 class Sema {
   private:
     Scope scope;

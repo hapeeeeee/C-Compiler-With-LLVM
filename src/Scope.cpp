@@ -1,4 +1,5 @@
 #include "include/Scope.h"
+#include "llvm/Support/raw_ostream.h"
 
 Scope::Scope() {
     envs.push_back(std::make_shared<Env>());
@@ -29,7 +30,7 @@ std::shared_ptr<Symbol> Scope::FindVarSymbol(llvm::StringRef name) {
 
 std::shared_ptr<Symbol> Scope::FindVarSymbolInCurrEnv(llvm::StringRef name) {
     llvm::StringMap<std::shared_ptr<Symbol>> &table = envs.back()->variableSymbolTable;
-    if (table.count(name) > 1) {
+    if (table.count(name) >= 1) {
         return table[name];
     }
     return nullptr;

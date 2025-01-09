@@ -59,6 +59,7 @@ class ASTNode {
   public:
     CType *cType;
     Nodekind nodeKind;
+    Token token;
 
   public:
     ASTNode(Nodekind kind) : nodeKind(kind) {
@@ -71,9 +72,6 @@ class ASTNode {
 };
 
 class VariableDecl : public ASTNode {
-  public:
-    Token token;
-
   public:
     VariableDecl() : ASTNode(Nodekind::ND_VariableDecl) {
     }
@@ -116,10 +114,7 @@ class BinaryExpr : public ASTNode {
 
 class NumberExpr : public ASTNode {
   public:
-    int number;
-
-  public:
-    NumberExpr(int num) : number(num), ASTNode(Nodekind::ND_NumberExpr) {
+    NumberExpr() : ASTNode(Nodekind::ND_NumberExpr) {
     }
 
     llvm::Value *AcceptVisitor(Visitor *v) override {
@@ -132,9 +127,6 @@ class NumberExpr : public ASTNode {
 };
 
 class VariableAssessExpr : public ASTNode {
-  public:
-    llvm::StringRef name;
-
   public:
     VariableAssessExpr() : ASTNode(Nodekind::ND_VariableAssessExpr) {
     }

@@ -38,10 +38,11 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDeclStmt() {
         assert(Consume(TokenType::Identifier));
 
         if (token.tokenTy == TokenType::Equal) {
+            Token tok = token;
             Advance();
             auto left       = sema.SemaVariableAccessExprNode(variableToken);
             auto right      = ParserExpr();
-            auto assignExpr = sema.SemaAssignExprNode(left, right);
+            auto assignExpr = sema.SemaAssignExprNode(left, right, tok);
             declArr.push_back(assignExpr);
         }
 
@@ -102,8 +103,9 @@ std::shared_ptr<ASTNode> Parser::ParserAssignExpr() {
     IsExcept(TokenType::Identifier);
     auto leftExpr = sema.SemaVariableAccessExprNode(token);
     Advance();
+    Token tok = token;
     Consume(TokenType::Equal);
-    return sema.SemaAssignExprNode(leftExpr, ParserExpr());
+    return sema.SemaAssignExprNode(leftExpr, ParserExpr(), tok);
 }
 
 /// @brief term  : factor(("*" | "/") factor)*
@@ -138,6 +140,7 @@ std::shared_ptr<ASTNode> Parser::ParserFactor() {
         Advance();
         return factorExpr;
     } else {
+        IsExcept(TokenType::Number);
         auto factorExpr = sema.SemaNumberExprNode(token.cType, token);
         Advance();
         return factorExpr;
@@ -145,7 +148,14 @@ std::shared_ptr<ASTNode> Parser::ParserFactor() {
 }
 
 bool Parser::IsExcept(TokenType tokTy) {
-    return token.tokenTy == tokTy;
+    if (token.tokenTy != tokTy) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr),
+                                diag::error_except,
+                                Token::GetSpellingText(tokTy),
+                                llvm::StringRef(token.ptr, token.length));
+        return false;
+    }
+    return true;
 }
 
 bool Parser::Consume(TokenType tokTy) {

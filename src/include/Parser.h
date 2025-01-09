@@ -50,7 +50,7 @@ class Parser {
 
     /// @brief Advances to the next token in the input stream
     void Advance();
-
+  
     Diagnostics &GetDiagnostics();
 };
 

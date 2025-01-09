@@ -4,18 +4,19 @@ Parser::Parser(Lexer &lex, Sema &sema) : lexer(lex), sema(sema) {
     Advance();
 }
 
-/// @brief prog : (decl-stmt | expr-stmt)*
+/// @brief  prog : stmt*
+///         stmt : decl-stmt | expr-stmt | null-stmt
 std::shared_ptr<Program> Parser::ParserProgram() {
     std::vector<std::shared_ptr<ASTNode>> stmts;
     while (token.tokenTy != TokenType::Eof) {
-        if (token.tokenTy == TokenType::Semi) {
+        if (token.tokenTy == TokenType::Semi) { ///< null-stmt
             Advance();
             continue;
-        } else if (token.tokenTy == TokenType::KW_int) {
-            const auto &exprs = ParserDecl();
+        } else if (token.tokenTy == TokenType::KW_int) { ///< decl-stmt
+            const auto &exprs = ParserDeclStmt();
             stmts.insert(stmts.end(), exprs.begin(), exprs.end());
-        } else {
-            auto expr = ParserExpr();
+        } else { ///< expr-stmt
+            auto expr = ParserExprStmt();
             stmts.push_back(expr);
         }
     }
@@ -23,8 +24,8 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     return program;
 }
 
-/// @brief decl-stam : type-decl identifier ("=" expr)? (, identifier ("=" expr))* ";"
-std::vector<std::shared_ptr<ASTNode>> Parser::ParserDecl() {
+/// @brief decl-stmt : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
+std::vector<std::shared_ptr<ASTNode>> Parser::ParserDeclStmt() {
     Consume(TokenType::KW_int);
     CType *cTy = CType::getIntTy();
 
@@ -34,14 +35,14 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDecl() {
         Token variableToken = token;
         auto variableDecl   = sema.SemaVariableDeclNode(cTy, token);
         declArr.push_back(variableDecl);
-        llvm::StringRef variableName = variableToken.content;
         assert(Consume(TokenType::Identifier));
 
         if (token.tokenTy == TokenType::Equal) {
+            Token tok = token;
             Advance();
-            auto left       = sema.SemaVariableAccessExprNode(cTy, variableToken);
+            auto left       = sema.SemaVariableAccessExprNode(variableToken);
             auto right      = ParserExpr();
-            auto assignExpr = sema.SemaAssignExprNode(left, right);
+            auto assignExpr = sema.SemaAssignExprNode(left, right, tok);
             declArr.push_back(assignExpr);
         }
 
@@ -53,8 +54,32 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDecl() {
     return declArr;
 }
 
-/// @brief expr : term(("+" | "-") term)*
+/// @brief expr-stmt : expr ";"
+std::shared_ptr<ASTNode> Parser::ParserExprStmt() {
+    auto expr = ParserExpr();
+    Consume(TokenType::Semi);
+    return expr;
+}
+
+/// @brief expr        : assign-expr | add-expr
+///        assign-expr : identifier ("=" expr)+
+///        add-expr    : mult-expr ( ("+" | "_") mult-expr)*
 std::shared_ptr<ASTNode> Parser::ParserExpr() {
+    bool isAssignExpr = false;
+    lexer.SaveState();
+    if (token.tokenTy == TokenType::Identifier) {
+        Token tmp;
+        lexer.NextToken(tmp);
+        if (tmp.tokenTy == TokenType::Equal) {
+            isAssignExpr = true;
+        }
+    }
+    lexer.RestoreState();
+
+    if (isAssignExpr) {
+        return ParserAssignExpr();
+    }
+
     auto left = ParserTerm();
     // a + b + c + d...
     while (token.tokenTy == TokenType::Plus || token.tokenTy == TokenType::Minus) {
@@ -71,6 +96,16 @@ std::shared_ptr<ASTNode> Parser::ParserExpr() {
         left         = binExpr;
     }
     return left;
+}
+
+/// @brief assign-expr : identifier ("=" expr)+
+std::shared_ptr<ASTNode> Parser::ParserAssignExpr() {
+    IsExcept(TokenType::Identifier);
+    auto leftExpr = sema.SemaVariableAccessExprNode(token);
+    Advance();
+    Token tok = token;
+    Consume(TokenType::Equal);
+    return sema.SemaAssignExprNode(leftExpr, ParserExpr(), tok);
 }
 
 /// @brief term  : factor(("*" | "/") factor)*
@@ -101,10 +136,11 @@ std::shared_ptr<ASTNode> Parser::ParserFactor() {
         Advance();
         return expr;
     } else if (token.tokenTy == TokenType::Identifier) {
-        auto factorExpr = sema.SemaVariableAccessExprNode(token.cType, token);
+        auto factorExpr = sema.SemaVariableAccessExprNode(token);
         Advance();
         return factorExpr;
     } else {
+        IsExcept(TokenType::Number);
         auto factorExpr = sema.SemaNumberExprNode(token.cType, token);
         Advance();
         return factorExpr;
@@ -112,7 +148,14 @@ std::shared_ptr<ASTNode> Parser::ParserFactor() {
 }
 
 bool Parser::IsExcept(TokenType tokTy) {
-    return token.tokenTy == tokTy;
+    if (token.tokenTy != tokTy) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr),
+                                diag::error_except,
+                                Token::GetSpellingText(tokTy),
+                                llvm::StringRef(token.ptr, token.length));
+        return false;
+    }
+    return true;
 }
 
 bool Parser::Consume(TokenType tokTy) {
@@ -120,9 +163,17 @@ bool Parser::Consume(TokenType tokTy) {
         Advance();
         return true;
     }
+    GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr),
+                            diag::error_except,
+                            Token::GetSpellingText(tokTy),
+                            llvm::StringRef(token.ptr, token.length));
     return false;
 }
 
 void Parser::Advance() {
     lexer.NextToken(token);
+}
+
+Diagnostics &Parser::GetDiagnostics() {
+    return lexer.GetDiagnostics();
 }

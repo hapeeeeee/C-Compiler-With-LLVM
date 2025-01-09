@@ -3,6 +3,8 @@
 #define _AST_H_
 
 #include "CType.h"
+#include "Lexer.h"
+
 #include "llvm/IR/Value.h"
 #include <memory>
 #include <vector>
@@ -15,7 +17,12 @@ class NumberExpr;
 class VariableAssessExpr;
 class AssignExpr;
 
-/// @brief
+/// @brief Base class for the visitor in the Visitor design pattern.
+/// @details This class defines a set of pure virtual functions to visit different nodes of an
+/// Abstract Syntax Tree (AST). By inheriting from this class and implementing its virtual
+/// functions, specific visitors can be created, such as `PrintVisitor` for printing AST node
+/// information or `CodeGen` for generating LLVM IR code. This class enables functionality to be
+/// extended without modifying the AST node classes.
 class Visitor {
   public:
     virtual ~Visitor() {
@@ -52,6 +59,7 @@ class ASTNode {
   public:
     CType *cType;
     Nodekind nodeKind;
+    Token token;
 
   public:
     ASTNode(Nodekind kind) : nodeKind(kind) {
@@ -64,9 +72,6 @@ class ASTNode {
 };
 
 class VariableDecl : public ASTNode {
-  public:
-    llvm::StringRef name;
-
   public:
     VariableDecl() : ASTNode(Nodekind::ND_VariableDecl) {
     }
@@ -81,10 +86,10 @@ class VariableDecl : public ASTNode {
 };
 
 enum class OpCode {
-    Add = 0,
-    Sub,
-    Mul,
-    Div,
+    Add = 0, ///< +
+    Sub,     ///< -
+    Mul,     ///< *
+    Div,     ///< /
 };
 
 class BinaryExpr : public ASTNode {
@@ -109,10 +114,7 @@ class BinaryExpr : public ASTNode {
 
 class NumberExpr : public ASTNode {
   public:
-    int number;
-
-  public:
-    NumberExpr(int num) : number(num), ASTNode(Nodekind::ND_NumberExpr) {
+    NumberExpr() : ASTNode(Nodekind::ND_NumberExpr) {
     }
 
     llvm::Value *AcceptVisitor(Visitor *v) override {
@@ -125,9 +127,6 @@ class NumberExpr : public ASTNode {
 };
 
 class VariableAssessExpr : public ASTNode {
-  public:
-    llvm::StringRef name;
-
   public:
     VariableAssessExpr() : ASTNode(Nodekind::ND_VariableAssessExpr) {
     }

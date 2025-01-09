@@ -1,10 +1,59 @@
 #include "include/Lexer.h"
 
-Lexer::Lexer(llvm::StringRef sourceCode) {
-    workPtr        = sourceCode.begin();
-    eofPtr         = sourceCode.end();
-    workRowHeadPtr = sourceCode.begin();
-    workRow        = 1;
+llvm::StringRef Token::GetSpellingText(TokenType ty) {
+    switch (ty) {
+    case TokenType::Number:
+        return "number";
+        break;
+    case TokenType::Equal:
+        return "=";
+        break;
+    case TokenType::Minus:
+        return "-";
+        break;
+    case TokenType::Plus:
+        return "+";
+        break;
+    case TokenType::Star:
+        return "*";
+        break;
+    case TokenType::Slash:
+        return "/";
+        break;
+    case TokenType::LeftParent:
+        return "(";
+        break;
+    case TokenType::RightParent:
+        return ")";
+        break;
+    case TokenType::Comma:
+        return ",";
+        break;
+    case TokenType::Semi:
+        return ";";
+        break;
+    case TokenType::Identifier:
+        return "Identifier";
+        break;
+    case TokenType::KW_int:
+        return "int";
+        break;
+    case TokenType::Eof:
+        return "Eof";
+        break;
+    default:
+        llvm::llvm_unreachable_internal();
+        break;
+    }
+}
+
+Lexer::Lexer(llvm::SourceMgr &mgr, Diagnostics &diag) : mgr(mgr), diager(diag) {
+    unsigned int id     = mgr.getMainFileID();
+    llvm::StringRef buf = mgr.getMemoryBuffer(id)->getBuffer();
+    workPtr             = buf.begin();
+    eofPtr              = buf.end();
+    workRowHeadPtr      = buf.begin();
+    workRow             = 1;
 }
 
 void Lexer::NextToken(Token &tok) {
@@ -87,6 +136,7 @@ void Lexer::NextToken(Token &tok) {
             break;
         }
         default:
+            diager.Report(llvm::SMLoc::getFromPointer(workPtr), diag::error_unknown_char, workPtr);
             tok.tokenTy = TokenType::Unknown;
             workPtr++;
             break;
@@ -102,8 +152,26 @@ void Lexer::Run(Token &tok) {
     }
 }
 
+void Lexer::SaveState() {
+    state.eofPtr         = eofPtr;
+    state.workPtr        = workPtr;
+    state.workRow        = workRow;
+    state.workRowHeadPtr = workRowHeadPtr;
+}
+
+void Lexer::RestoreState() {
+    eofPtr         = state.eofPtr;
+    workPtr        = state.workPtr;
+    workRow        = state.workRow;
+    workRowHeadPtr = state.workRowHeadPtr;
+}
+
+Diagnostics &Lexer::GetDiagnostics() {
+    return diager;
+}
+
 void Lexer::KeyWordHandle(Token &tok) {
-    if (tok.content == "int") {
+    if (llvm::StringRef(tok.ptr, tok.length) == "int") {
         tok.tokenTy = TokenType::KW_int;
     }
 }

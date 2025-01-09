@@ -3,6 +3,7 @@
 #define _LEXER_H_
 
 #include "CType.h"
+#include "Diagnostics.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -30,11 +31,12 @@ enum class TokenType {
 class Token {
   public:
     TokenType tokenTy;
-    CType *cType;
     int row;
-    int col;                 ///< The line and column number of the token in the source code.
-    int value;               ///< The value of the token, used when the TokenType is 'number'.
-    llvm::StringRef content; ///< The textual content of the token in the source code.
+    int col;         ///< The line and column number of the token in the source code.
+    int value;       ///< The value of the token, used when the TokenType is 'number'.
+    CType *cType;    ///< Build-in Type for token (int | )
+    const char *ptr; ///< Diag info pointer
+    int length;      ///< Length of token
 
   public:
     Token() {
@@ -44,15 +46,19 @@ class Token {
         value   = 0;
     }
 
+    static llvm::StringRef GetSpellingText(TokenType ty);
+
     void setMember(TokenType tokTy, const char *pos, int len, int val = 0, CType *cTy = nullptr) {
         tokenTy = tokTy;
-        content = llvm::StringRef(pos, len);
         value   = val;
         cType   = cTy;
+        ptr     = pos;
+        length  = len;
     }
 
     void Dump() {
-        llvm::outs() << "[ " << content << ", row = " << row << ", col = " << col << " ]\n";
+        llvm::outs() << "[ " << llvm::StringRef(ptr, length) << ", row = " << row
+                     << ", col = " << col << " ]\n";
     }
 };
 
@@ -65,11 +71,23 @@ class Token {
 /// divided into meaningful symbols for further parsing and compilation.
 class Lexer {
   public:
-    Lexer(llvm::StringRef sourceCode);
+    Lexer(llvm::SourceMgr &mgr, Diagnostics &diager);
     void NextToken(Token &tok);
     void Run(Token &tok);
+    void SaveState();
+    void RestoreState();
+    Diagnostics &GetDiagnostics();
 
   private:
+    llvm::SourceMgr &mgr;
+    Diagnostics &diager;
+    struct State {
+        const char *workPtr;
+        const char *workRowHeadPtr;
+        const char *eofPtr;
+        int workRow;
+    };
+    State state;                ///< Record Lexer State for LL(k)
     const char *workPtr;        ///< Pointer to the current character in the source
                                 ///< code being scanned
     const char *workRowHeadPtr; ///< Pointer to the start of the current line in

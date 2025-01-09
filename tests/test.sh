@@ -1,2 +1,2 @@
 ../bin/CC_LLVM ./expr.txt > ./expr.ll
-lli ./expr.ll
+/home/zax/third-project/llvm-20/llvm-install-dir/bin/lli ./expr.ll

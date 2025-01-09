@@ -6,6 +6,14 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 
+/// @brief Code generation class for generating LLVM IR.
+/// @details This class implements the `Visitor` interface to traverse the Abstract Syntax Tree
+/// (AST) and generate corresponding LLVM IR code. It manages an LLVM context, IR builder, and
+/// module, which are used to create IR instructions and define program structure.
+///
+/// The class also maintains a mapping between variable names and their
+/// corresponding LLVM IR values and types, enabling efficient code generation
+/// for variable declarations, assignments, and accesses.
 class CodeGen : public Visitor {
   public:
     CodeGen(std::shared_ptr<Program> program);
@@ -21,7 +29,7 @@ class CodeGen : public Visitor {
     llvm::IRBuilder<> irBuilder{llvmContext};
     std::shared_ptr<llvm::Module> llvmModule;
 
-    llvm::StringMap<llvm::Value *> varAddrMap;
+    llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> varAddrTypeMap;
 };
 
 #endif // _CODEGEN_H_

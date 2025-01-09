@@ -56,7 +56,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
 }
 
 llvm::Value *CodeGen::VisitNumberExpr(NumberExpr *numberExpr) {
-    return irBuilder.getInt32(numberExpr->number);
+    return irBuilder.getInt32(numberExpr->token.value);
 }
 
 llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
@@ -64,25 +64,30 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
     if (variableDecl->cType == CType::getIntTy()) {
         ty = irBuilder.getInt32Ty();
     }
-    llvm::Value *value = irBuilder.CreateAlloca(ty, nullptr, variableDecl->name);
-    varAddrMap.insert({variableDecl->name, value});
+
+    llvm::StringRef name(variableDecl->token.ptr, variableDecl->token.length);
+    llvm::Value *value = irBuilder.CreateAlloca(ty, nullptr, name);
+    varAddrTypeMap.insert({name, {value, ty}});
     return value;
 }
 
 llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
-    llvm::Value *value = varAddrMap[variableAssessExpr->name];
-
-    llvm::Type *ty = nullptr;
-    if (variableAssessExpr->cType == CType::getIntTy()) {
-        ty = irBuilder.getInt32Ty();
-    }
-    return irBuilder.CreateLoad(ty, value, variableAssessExpr->name);
+    llvm::StringRef name(variableAssessExpr->token.ptr, variableAssessExpr->token.length);
+    std::pair<llvm::Value *, llvm::Type *> pair = varAddrTypeMap[name];
+    llvm::Value *value                          = pair.first;
+    llvm::Type *ty                              = pair.second;
+    return irBuilder.CreateLoad(ty, value, name);
 }
 
 llvm::Value *CodeGen::VisitAssignExpr(AssignExpr *assignExpr) {
-    auto leftExpr                      = assignExpr->leftExpr;
-    VariableAssessExpr *leftAccessExpr = (VariableAssessExpr *)leftExpr.get();
-    llvm::Value *leftValueAddr         = varAddrMap[leftAccessExpr->name];
-    llvm::Value *rightValue            = assignExpr->rightExpr->AcceptVisitor(this);
-    return irBuilder.CreateStore(rightValue, leftValueAddr);
+    llvm::StringRef name(assignExpr->token.ptr, assignExpr->token.length);
+    auto leftExpr                               = assignExpr->leftExpr;
+    VariableAssessExpr *leftAccessExpr          = (VariableAssessExpr *)leftExpr.get();
+    std::pair<llvm::Value *, llvm::Type *> pair = varAddrTypeMap[name];
+
+    llvm::Type *leftValueTy    = pair.second;
+    llvm::Value *leftValueAddr = pair.first;
+    llvm::Value *rightValue    = assignExpr->rightExpr->AcceptVisitor(this);
+    irBuilder.CreateStore(rightValue, leftValueAddr);
+    return irBuilder.CreateLoad(leftValueTy, leftValueAddr, name);
 }

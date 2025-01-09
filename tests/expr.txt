@@ -1,6 +1,9 @@
 int a;
-int b = 1;
+int b;
+int b;
+c = 3;
+d;
 int c, d = 2;
 int e = 3, f = 4;
-
-1 + b * 3 - f / d + e;
+b = e = 2; 
+(1 + b) * 3 - f / d + e;

@@ -1,8 +1,5 @@
 int a;
 int b;
-int b;
-c = 3;
-d;
 int c, d = 2;
 int e = 3, f = 4;
 b = e = 2; 

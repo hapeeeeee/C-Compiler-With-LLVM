@@ -46,6 +46,9 @@ class Token {
         value   = 0;
     }
 
+    Token(TokenType ty, int row, int col) : tokenTy(ty), row(row), col(col) {
+    }
+
     static llvm::StringRef GetSpellingText(TokenType ty);
 
     void setMember(TokenType tokTy, const char *pos, int len, int val = 0, CType *cTy = nullptr) {

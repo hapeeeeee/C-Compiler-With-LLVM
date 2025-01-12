@@ -1,8 +1,9 @@
 prog            : stmt*
-stmt            : decl-stmt | expr-stmt | null-stmt
+stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt
 null-stmt       : ";"
 decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 expr-stmt       : expr ";"
+if-stmt         : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
 expr            : assign-expr | add-expr
 assign-expr     : identifier ("=" expr)+         
 add-expr        : mult-expr ( ("+" | "_") mult-expr)*

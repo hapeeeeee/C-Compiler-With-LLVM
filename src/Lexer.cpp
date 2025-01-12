@@ -125,6 +125,16 @@ void Lexer::NextToken(Token &tok) {
             workPtr++;
             break;
         }
+        case '{': {
+            tok.setMember(TokenType::LeftBrace, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case '}': {
+            tok.setMember(TokenType::RightBrace, workPtr, 1);
+            workPtr++;
+            break;
+        }
         case ',': {
             tok.setMember(TokenType::Comma, workPtr, 1);
             workPtr++;
@@ -173,6 +183,10 @@ Diagnostics &Lexer::GetDiagnostics() {
 void Lexer::KeyWordHandle(Token &tok) {
     if (llvm::StringRef(tok.ptr, tok.length) == "int") {
         tok.tokenTy = TokenType::KW_int;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "if") {
+        tok.tokenTy = TokenType::KW_if;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "else") {
+        tok.tokenTy = TokenType::KW_else;
     }
 }
 

@@ -18,7 +18,10 @@ class CodeGen : public Visitor {
   public:
     CodeGen(std::shared_ptr<Program> program);
     llvm::Value *VisitProgram(Program *program) override;
+    llvm::Value *VisitDeclStmts(DeclStmts *declStmts) override;
+    llvm::Value *VisitBlockStmts(BlockStmts *blockStmts) override;
     llvm::Value *VisitVariableDecl(VariableDecl *VariableDecl) override;
+    llvm::Value *VisitIfStmt(IfStmt *ifStmt) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
@@ -28,7 +31,7 @@ class CodeGen : public Visitor {
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> irBuilder{llvmContext};
     std::shared_ptr<llvm::Module> llvmModule;
-
+    llvm::Function *currFunc{nullptr};
     llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> varAddrTypeMap;
 };
 

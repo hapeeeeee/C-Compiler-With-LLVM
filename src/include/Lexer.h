@@ -17,10 +17,14 @@ enum class TokenType {
     Slash,       ///< /
     LeftParent,  ///< (
     RightParent, ///< )
+    LeftBrace,   ///< {
+    RightBrace,  ///< }
     Comma,       ///< ,
     Semi,        ///< ;
     Identifier,  ///< variable name
     KW_int,      ///< int
+    KW_if,       ///< if
+    KW_else,     ///< else
     Eof          ///< end of file
 };
 

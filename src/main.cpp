@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     // std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
     Lexer lex(mgr, diag);
-    // Token tok;
+    Token tok;
     // lex.Run(tok);
     Sema sema(diag);
     Parser parser(lex, sema);

@@ -47,6 +47,14 @@ llvm::Value *CodeGen::VisitDeclStmts(DeclStmts *declStmts) {
     return lastVal;
 }
 
+llvm::Value *CodeGen::VisitBlockStmts(BlockStmts *blockStmts) {
+    llvm::Value *lastVal = nullptr;
+    for (auto node : blockStmts->nodeVec) {
+        lastVal = node->AcceptVisitor(this);
+    }
+    return lastVal;
+}
+
 llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
     llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);

@@ -17,15 +17,17 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     return program;
 }
 
-/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt
+/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt
 std::shared_ptr<ASTNode> Parser::ParserStmt() {
     if (token.tokenTy == TokenType::Semi) { ///< null-stmt
         Advance();
         return nullptr;
     } else if (token.tokenTy == TokenType::KW_int) { ///< decl-stmt
         return ParserDeclStmt();
-    } else if (token.tokenTy == TokenType::KW_if) {
+    } else if (token.tokenTy == TokenType::KW_if) { ///< if-stmt
         return ParserIfStmt();
+    } else if (token.tokenTy == TokenType::LeftBrace) { ///< block-stmt
+        return ParserBlockStmt();
     } else { ///< expr-stmt
         return ParserExprStmt();
     }
@@ -59,6 +61,18 @@ std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     }
     Consume(TokenType::Semi);
     return declNode;
+}
+
+std::shared_ptr<ASTNode> Parser::ParserBlockStmt() {
+    sema.EnterScope();
+    Consume(TokenType::LeftBrace);
+    auto blockStmts = std::make_shared<BlockStmts>();
+    while (token.tokenTy != TokenType::RightBrace) {
+        blockStmts->nodeVec.push_back(ParserStmt());
+    }
+    Consume(TokenType::RightBrace);
+    sema.ExitScope();
+    return blockStmts;
 }
 
 /// @brief expr-stmt : expr ";"

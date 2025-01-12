@@ -17,6 +17,8 @@ enum class TokenType {
     Slash,       ///< /
     LeftParent,  ///< (
     RightParent, ///< )
+    LeftBrace,   ///< {
+    RightBrace,  ///< }
     Comma,       ///< ,
     Semi,        ///< ;
     Identifier,  ///< variable name

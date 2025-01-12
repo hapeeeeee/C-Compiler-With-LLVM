@@ -125,6 +125,16 @@ void Lexer::NextToken(Token &tok) {
             workPtr++;
             break;
         }
+        case '{': {
+            tok.setMember(TokenType::LeftBrace, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case '}': {
+            tok.setMember(TokenType::RightBrace, workPtr, 1);
+            workPtr++;
+            break;
+        }
         case ',': {
             tok.setMember(TokenType::Comma, workPtr, 1);
             workPtr++;

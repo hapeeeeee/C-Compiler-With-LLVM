@@ -17,6 +17,7 @@ class NumberExpr;
 class VariableAssessExpr;
 class AssignExpr;
 class DeclStmts;
+class BlockStmts;
 class IfStmt;
 
 /// @brief Base class for the visitor in the Visitor design pattern.
@@ -32,6 +33,7 @@ class Visitor {
     virtual llvm::Value *VisitProgram(Program *program)                                  = 0;
     virtual llvm::Value *VisitDeclStmts(DeclStmts *declStmts)                            = 0;
     virtual llvm::Value *VisitVariableDecl(VariableDecl *variableDecl)                   = 0;
+    virtual llvm::Value *VisitBlockStmts(BlockStmts *blockStmts)                         = 0;
     virtual llvm::Value *VisitIfStmt(IfStmt *ifStmt)                                     = 0;
     virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
@@ -54,6 +56,7 @@ class ASTNode {
   public:
     enum Nodekind {
         ND_DeclStmts = 0,
+        ND_BlockStmts,
         ND_VariableDecl,
         ND_IfStmt,
         ND_BinaryExpr,
@@ -105,6 +108,23 @@ class VariableDecl : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_VariableDecl;
+    }
+};
+
+class BlockStmts : public ASTNode {
+  public:
+    std::vector<std::shared_ptr<ASTNode>> nodeVec;
+
+  public:
+    BlockStmts() : ASTNode(Nodekind::ND_BlockStmts) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitBlockStmts(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_BlockStmts;
     }
 };
 

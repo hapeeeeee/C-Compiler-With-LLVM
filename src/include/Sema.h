@@ -13,6 +13,10 @@
 /// and prepares the AST for further compilation stages.
 class Sema {
   public:
+    std::shared_ptr<ASTNode> SemaBlockStmtNode(std::shared_ptr<ASTNode> condExpr,
+                                               std::shared_ptr<ASTNode> thenStmt,
+                                               std::shared_ptr<ASTNode> elseStmt);
+
     std::shared_ptr<ASTNode> SemaIfStmtNode(std::shared_ptr<ASTNode> condExpr,
                                             std::shared_ptr<ASTNode> thenStmt,
                                             std::shared_ptr<ASTNode> elseStmt);
@@ -30,6 +34,9 @@ class Sema {
     SemaBinaryExprNode(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right);
 
     std::shared_ptr<ASTNode> SemaNumberExprNode(CType *cType, Token &tok);
+
+    void EnterScope();
+    void ExitScope();
 
   private:
     Scope scope;

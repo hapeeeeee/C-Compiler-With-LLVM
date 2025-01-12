@@ -60,3 +60,11 @@ std::shared_ptr<ASTNode> Sema::SemaNumberExprNode(CType *cType, Token &tok) {
     expr->cType = cType;
     return expr;
 }
+
+void Sema::EnterScope() {
+    scope.EnterScope();
+}
+
+void Sema::ExitScope() {
+    scope.ExitScope();
+}

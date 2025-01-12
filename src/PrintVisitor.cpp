@@ -18,7 +18,9 @@ llvm::Value *PrintVisitor::VisitProgram(Program *program) {
 llvm::Value *PrintVisitor::VisitDeclStmts(DeclStmts *declStmts) {
     for (auto node : declStmts->nodeVec) {
         node->AcceptVisitor(this);
+        llvm::outs() << "\n";
     }
+    return nullptr;
 }
 
 llvm::Value *PrintVisitor::VisitVariableDecl(VariableDecl *variableDecl) {
@@ -29,15 +31,26 @@ llvm::Value *PrintVisitor::VisitVariableDecl(VariableDecl *variableDecl) {
     return nullptr;
 }
 
+llvm::Value *PrintVisitor::VisitBlockStmts(BlockStmts *blockStmts) {
+    llvm::outs() << "{\n";
+    for (auto node : blockStmts->nodeVec) {
+        llvm::outs() << "  ";
+        node->AcceptVisitor(this);
+        llvm::outs() << "\n";
+    }
+    llvm::outs() << "}\n";
+    return nullptr;
+}
+
 llvm::Value *PrintVisitor::VisitIfStmt(IfStmt *ifStmt) {
     llvm::outs() << "if (";
     ifStmt->condExpr->AcceptVisitor(this);
-    llvm::outs() << ") {";
+    llvm::outs() << ")";
     ifStmt->thenStmt->AcceptVisitor(this);
     if (ifStmt->elseStmt) {
-        llvm::outs() << "} \nelse {";
+        llvm::outs() << " \nelse ";
         ifStmt->elseStmt->AcceptVisitor(this);
-        llvm::outs() << "}\n";
+        llvm::outs() << "\n";
     }
     return nullptr;
 }

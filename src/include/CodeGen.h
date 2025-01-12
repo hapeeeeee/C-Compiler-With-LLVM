@@ -19,6 +19,7 @@ class CodeGen : public Visitor {
     CodeGen(std::shared_ptr<Program> program);
     llvm::Value *VisitProgram(Program *program) override;
     llvm::Value *VisitDeclStmts(DeclStmts *declStmts) override;
+    llvm::Value *VisitBlockStmts(BlockStmts *blockStmts) override;
     llvm::Value *VisitVariableDecl(VariableDecl *VariableDecl) override;
     llvm::Value *VisitIfStmt(IfStmt *ifStmt) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;

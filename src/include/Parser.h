@@ -10,11 +10,12 @@
 /// @details The current grammar rules are as follows:
 /// +-----------------------------------------------------+
 /// | prog            : stmt*
-/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt
+/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt
 /// | null-stmt       : ";"
 /// | decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 /// | expr-stmt       : expr ";"
 /// | if-stmt         : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
+/// | block-stmt      : "{" stmt* "}"
 /// | expr            : assign-expr | add-expr
 /// | assign-expr     : identifier "=" expr
 /// | add-expr        : mult-expr ( ("+" | "_") mult-expr)*
@@ -37,6 +38,7 @@ class Parser {
   private:
     std::shared_ptr<ASTNode> ParserStmt();
     std::shared_ptr<ASTNode> ParserDeclStmt();
+    std::shared_ptr<ASTNode> ParserBlockStmt();
     std::shared_ptr<ASTNode> ParserExprStmt();
     std::shared_ptr<ASTNode> ParserIfStmt();
     std::shared_ptr<ASTNode> ParserExpr();

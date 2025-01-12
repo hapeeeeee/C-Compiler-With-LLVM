@@ -1,10 +1,15 @@
 int a = 0;
 int b = 2;
-if (b) 
-    if (a)
-        b = 1;
-    else
-        b=  10;
+if (b) {
+    b = 1;
+    b = b + 1;
+    b = b + 2;
+    if (a) {
+        b = b + 3;
+        b = b + 4;
+    }
+}
+    
 else 
     b = 20;
 int c, d = 2;

@@ -10,10 +10,11 @@
 /// @details The current grammar rules are as follows:
 /// +-----------------------------------------------------+
 /// | prog            : stmt*
-/// | stmt            : decl-stmt | expr-stmt | null-stmt
+/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt
 /// | null-stmt       : ";"
 /// | decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 /// | expr-stmt       : expr ";"
+/// | if-stmt         : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
 /// | expr            : assign-expr | add-expr
 /// | assign-expr     : identifier "=" expr
 /// | add-expr        : mult-expr ( ("+" | "_") mult-expr)*
@@ -34,8 +35,10 @@ class Parser {
     Token token; ///< The current token
 
   private:
-    std::vector<std::shared_ptr<ASTNode>> ParserDeclStmt();
+    std::shared_ptr<ASTNode> ParserStmt();
+    std::shared_ptr<ASTNode> ParserDeclStmt();
     std::shared_ptr<ASTNode> ParserExprStmt();
+    std::shared_ptr<ASTNode> ParserIfStmt();
     std::shared_ptr<ASTNode> ParserExpr();
     std::shared_ptr<ASTNode> ParserAssignExpr();
     std::shared_ptr<ASTNode> ParserTerm();
@@ -50,7 +53,7 @@ class Parser {
 
     /// @brief Advances to the next token in the input stream
     void Advance();
-  
+
     Diagnostics &GetDiagnostics();
 };
 

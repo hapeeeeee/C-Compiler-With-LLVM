@@ -5,36 +5,43 @@ Parser::Parser(Lexer &lex, Sema &sema) : lexer(lex), sema(sema) {
 }
 
 /// @brief  prog : stmt*
-///         stmt : decl-stmt | expr-stmt | null-stmt
 std::shared_ptr<Program> Parser::ParserProgram() {
     std::vector<std::shared_ptr<ASTNode>> stmts;
     while (token.tokenTy != TokenType::Eof) {
-        if (token.tokenTy == TokenType::Semi) { ///< null-stmt
-            Advance();
-            continue;
-        } else if (token.tokenTy == TokenType::KW_int) { ///< decl-stmt
-            const auto &exprs = ParserDeclStmt();
-            stmts.insert(stmts.end(), exprs.begin(), exprs.end());
-        } else { ///< expr-stmt
-            auto expr = ParserExprStmt();
-            stmts.push_back(expr);
+        auto stmt = Parser::ParserStmt();
+        if (stmt) {
+            stmts.push_back(stmt);
         }
     }
     auto program = std::make_shared<Program>(std::move(stmts));
     return program;
 }
 
+/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt
+std::shared_ptr<ASTNode> Parser::ParserStmt() {
+    if (token.tokenTy == TokenType::Semi) { ///< null-stmt
+        Advance();
+        return nullptr;
+    } else if (token.tokenTy == TokenType::KW_int) { ///< decl-stmt
+        return ParserDeclStmt();
+    } else if (token.tokenTy == TokenType::KW_if) {
+        return ParserIfStmt();
+    } else { ///< expr-stmt
+        return ParserExprStmt();
+    }
+}
+
 /// @brief decl-stmt : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
-std::vector<std::shared_ptr<ASTNode>> Parser::ParserDeclStmt() {
+std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     Consume(TokenType::KW_int);
     CType *cTy = CType::getIntTy();
 
-    std::vector<std::shared_ptr<ASTNode>> declArr;
+    auto declNode = std::make_shared<DeclStmts>();
     // int a = 1, c = 2, d;
     while (token.tokenTy != TokenType::Semi) {
         Token variableToken = token;
         auto variableDecl   = sema.SemaVariableDeclNode(cTy, token);
-        declArr.push_back(variableDecl);
+        declNode->nodeVec.push_back(variableDecl);
         assert(Consume(TokenType::Identifier));
 
         if (token.tokenTy == TokenType::Equal) {
@@ -43,7 +50,7 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDeclStmt() {
             auto left       = sema.SemaVariableAccessExprNode(variableToken);
             auto right      = ParserExpr();
             auto assignExpr = sema.SemaAssignExprNode(left, right, tok);
-            declArr.push_back(assignExpr);
+            declNode->nodeVec.push_back(assignExpr);
         }
 
         if (token.tokenTy == TokenType::Comma) {
@@ -51,7 +58,7 @@ std::vector<std::shared_ptr<ASTNode>> Parser::ParserDeclStmt() {
         }
     }
     Consume(TokenType::Semi);
-    return declArr;
+    return declNode;
 }
 
 /// @brief expr-stmt : expr ";"
@@ -59,6 +66,21 @@ std::shared_ptr<ASTNode> Parser::ParserExprStmt() {
     auto expr = ParserExpr();
     Consume(TokenType::Semi);
     return expr;
+}
+
+/// @brief if-stmt : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
+std::shared_ptr<ASTNode> Parser::ParserIfStmt() {
+    Consume(TokenType::KW_if);
+    Consume(TokenType::LeftParent);
+    auto condExpr = ParserExpr();
+    Consume(TokenType::RightParent);
+    auto thenStmt                     = ParserStmt();
+    std::shared_ptr<ASTNode> elseStmt = nullptr;
+    if (token.tokenTy == TokenType::KW_else) {
+        Consume(TokenType::KW_else);
+        elseStmt = ParserStmt();
+    }
+    return sema.SemaIfStmtNode(condExpr, thenStmt, elseStmt);
 }
 
 /// @brief expr        : assign-expr | add-expr

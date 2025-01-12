@@ -15,12 +15,30 @@ llvm::Value *PrintVisitor::VisitProgram(Program *program) {
     return nullptr;
 }
 
+llvm::Value *PrintVisitor::VisitDeclStmts(DeclStmts *declStmts) {
+    for (auto node : declStmts->nodeVec) {
+        node->AcceptVisitor(this);
+    }
+}
+
 llvm::Value *PrintVisitor::VisitVariableDecl(VariableDecl *variableDecl) {
     if (variableDecl->cType == CType::getIntTy()) {
         llvm::outs() << "int "
                      << llvm::StringRef(variableDecl->token.ptr, variableDecl->token.length) << ";";
     }
+    return nullptr;
+}
 
+llvm::Value *PrintVisitor::VisitIfStmt(IfStmt *ifStmt) {
+    llvm::outs() << "if (";
+    ifStmt->condExpr->AcceptVisitor(this);
+    llvm::outs() << ") {";
+    ifStmt->thenStmt->AcceptVisitor(this);
+    if (ifStmt->elseStmt) {
+        llvm::outs() << "} \nelse {";
+        ifStmt->elseStmt->AcceptVisitor(this);
+        llvm::outs() << "}\n";
+    }
     return nullptr;
 }
 

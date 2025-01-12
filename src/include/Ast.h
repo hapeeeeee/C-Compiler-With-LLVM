@@ -16,6 +16,8 @@ class BinaryExpr;
 class NumberExpr;
 class VariableAssessExpr;
 class AssignExpr;
+class DeclStmts;
+class IfStmt;
 
 /// @brief Base class for the visitor in the Visitor design pattern.
 /// @details This class defines a set of pure virtual functions to visit different nodes of an
@@ -28,7 +30,9 @@ class Visitor {
     virtual ~Visitor() {
     }
     virtual llvm::Value *VisitProgram(Program *program)                                  = 0;
+    virtual llvm::Value *VisitDeclStmts(DeclStmts *declStmts)                            = 0;
     virtual llvm::Value *VisitVariableDecl(VariableDecl *variableDecl)                   = 0;
+    virtual llvm::Value *VisitIfStmt(IfStmt *ifStmt)                                     = 0;
     virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
@@ -49,7 +53,9 @@ class Program {
 class ASTNode {
   public:
     enum Nodekind {
-        ND_VariableDecl = 0,
+        ND_DeclStmts = 0,
+        ND_VariableDecl,
+        ND_IfStmt,
         ND_BinaryExpr,
         ND_NumberExpr,
         ND_VariableAssessExpr,
@@ -71,6 +77,23 @@ class ASTNode {
     }
 };
 
+class DeclStmts : public ASTNode {
+  public:
+    std::vector<std::shared_ptr<ASTNode>> nodeVec;
+
+  public:
+    DeclStmts() : ASTNode(Nodekind::ND_DeclStmts) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitDeclStmts(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_DeclStmts;
+    }
+};
+
 class VariableDecl : public ASTNode {
   public:
     VariableDecl() : ASTNode(Nodekind::ND_VariableDecl) {
@@ -82,6 +105,25 @@ class VariableDecl : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_VariableDecl;
+    }
+};
+
+class IfStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> condExpr;
+    std::shared_ptr<ASTNode> thenStmt;
+    std::shared_ptr<ASTNode> elseStmt;
+
+  public:
+    IfStmt() : ASTNode(Nodekind::ND_IfStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitIfStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_IfStmt;
     }
 };
 

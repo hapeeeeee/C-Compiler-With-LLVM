@@ -21,6 +21,8 @@ enum class TokenType {
     Semi,        ///< ;
     Identifier,  ///< variable name
     KW_int,      ///< int
+    KW_if,       ///< if
+    KW_else,     ///< else
     Eof          ///< end of file
 };
 

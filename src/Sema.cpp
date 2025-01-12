@@ -1,5 +1,15 @@
 #include "include/Sema.h"
 
+std::shared_ptr<ASTNode> Sema::SemaIfStmtNode(std::shared_ptr<ASTNode> condExpr,
+                                              std::shared_ptr<ASTNode> thenStmt,
+                                              std::shared_ptr<ASTNode> elseStmt) {
+    auto ifStmt      = std::make_shared<IfStmt>();
+    ifStmt->condExpr = condExpr;
+    ifStmt->thenStmt = thenStmt;
+    ifStmt->elseStmt = elseStmt;
+    return ifStmt;
+}
+
 std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(CType *cType, Token &tok) {
     llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
     // Check is redefined for symbol

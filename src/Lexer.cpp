@@ -173,6 +173,10 @@ Diagnostics &Lexer::GetDiagnostics() {
 void Lexer::KeyWordHandle(Token &tok) {
     if (llvm::StringRef(tok.ptr, tok.length) == "int") {
         tok.tokenTy = TokenType::KW_int;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "if") {
+        tok.tokenTy = TokenType::KW_if;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "else") {
+        tok.tokenTy = TokenType::KW_else;
     }
 }
 

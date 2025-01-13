@@ -9,23 +9,29 @@
 
 enum class TokenType {
     Unknown = 0,
-    Number,      ///< literal number
-    Equal,       ///< =
-    Minus,       ///< -
-    Plus,        ///< +
-    Star,        ///< *
-    Slash,       ///< /
-    LeftParent,  ///< (
-    RightParent, ///< )
-    LeftBrace,   ///< {
-    RightBrace,  ///< }
-    Comma,       ///< ,
-    Semi,        ///< ;
-    Identifier,  ///< variable name
-    KW_int,      ///< int
-    KW_if,       ///< if
-    KW_else,     ///< else
-    Eof          ///< end of file
+    Number,       ///< literal number
+    Equal,        ///< =
+    EqualEqual,   ///< ==
+    NotEqual,     ///< !=
+    Less,         ///< <
+    Greater,      ///< >
+    LessEqual,    ///< <=
+    GreaterEqual, ///< >=
+    Minus,        ///< -
+    Plus,         ///< +
+    Star,         ///< *
+    Slash,        ///< /
+    LeftParent,   ///< (
+    RightParent,  ///< )
+    LeftBrace,    ///< {
+    RightBrace,   ///< }
+    Comma,        ///< ,
+    Semi,         ///< ;
+    Identifier,   ///< variable name
+    KW_int,       ///< int
+    KW_if,        ///< if
+    KW_else,      ///< else
+    Eof           ///< end of file
 };
 
 /// @brief Represents a token with its position, type, and value

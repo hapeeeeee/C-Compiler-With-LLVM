@@ -97,9 +97,7 @@ std::shared_ptr<ASTNode> Parser::ParserIfStmt() {
     return sema.SemaIfStmtNode(condExpr, thenStmt, elseStmt);
 }
 
-/// @brief expr        : assign-expr | add-expr
-///        assign-expr : identifier ("=" expr)+
-///        add-expr    : mult-expr ( ("+" | "_") mult-expr)*
+/// @brief expr : assign-expr | equal-expr
 std::shared_ptr<ASTNode> Parser::ParserExpr() {
     bool isAssignExpr = false;
     lexer.SaveState();
@@ -115,23 +113,7 @@ std::shared_ptr<ASTNode> Parser::ParserExpr() {
     if (isAssignExpr) {
         return ParserAssignExpr();
     }
-
-    auto left = ParserTerm();
-    // a + b + c + d...
-    while (token.tokenTy == TokenType::Plus || token.tokenTy == TokenType::Minus) {
-        OpCode op;
-        if (token.tokenTy == TokenType::Plus) {
-            op = OpCode::Add;
-        } else {
-            op = OpCode::Sub;
-        }
-        Advance();
-
-        auto right   = ParserTerm();
-        auto binExpr = sema.SemaBinaryExprNode(left, op, right);
-        left         = binExpr;
-    }
-    return left;
+    return ParserEqualExpr();
 }
 
 /// @brief assign-expr : identifier ("=" expr)+
@@ -144,9 +126,67 @@ std::shared_ptr<ASTNode> Parser::ParserAssignExpr() {
     return sema.SemaAssignExprNode(leftExpr, ParserExpr(), tok);
 }
 
-/// @brief term  : factor(("*" | "/") factor)*
-std::shared_ptr<ASTNode> Parser::ParserTerm() {
-    auto left = ParserFactor();
+/// @brief equal-expr  : relational-expr ( ("==" | "!=") relational-expr)*
+std::shared_ptr<ASTNode> Parser::ParserEqualExpr() {
+    auto left = ParserRelationalExpr();
+    while (token.tokenTy == TokenType::EqualEqual || token.tokenTy == TokenType::NotEqual) {
+        OpCode op;
+        if (token.tokenTy == TokenType::EqualEqual) {
+            op = OpCode::EqualEqual;
+        } else {
+            op = OpCode::NotEqual;
+        }
+        Advance();
+        auto right = ParserRelationalExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief relational-expr : add-expr (( ">" |"<" | "<=" | ">=") add-expr)*
+std::shared_ptr<ASTNode> Parser::ParserRelationalExpr() {
+    auto left = ParserAddExpr();
+    while (token.tokenTy == TokenType::Less || token.tokenTy == TokenType::LessEqual ||
+           token.tokenTy == TokenType::Greater || token.tokenTy == TokenType::GreaterEqual) {
+        OpCode op;
+        if (token.tokenTy == TokenType::Less) {
+            op = OpCode::Less;
+        } else if (token.tokenTy == TokenType::LessEqual) {
+            op = OpCode::LessEqual;
+        } else if (token.tokenTy == TokenType::Greater) {
+            op = OpCode::Greater;
+        } else {
+            op = OpCode::GreaterEqual;
+        }
+        Advance();
+        auto right = ParserAddExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief  add-expr : mult-expr ( ("+" | "-") mult-expr)*
+std::shared_ptr<ASTNode> Parser::ParserAddExpr() {
+    auto left = ParserMultExpr();
+    // a + b + c + d...
+    while (token.tokenTy == TokenType::Plus || token.tokenTy == TokenType::Minus) {
+        OpCode op;
+        if (token.tokenTy == TokenType::Plus) {
+            op = OpCode::Add;
+        } else {
+            op = OpCode::Sub;
+        }
+        Advance();
+
+        auto right = ParserMultExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief mult-expr : primary-expr ( ("*" | "/") primary-expr)*
+std::shared_ptr<ASTNode> Parser::ParserMultExpr() {
+    auto left = ParserPrimaryExpr();
     // a * b * c * d...
     while (token.tokenTy == TokenType::Star || token.tokenTy == TokenType::Slash) {
         OpCode op;
@@ -156,15 +196,15 @@ std::shared_ptr<ASTNode> Parser::ParserTerm() {
             op = OpCode::Div;
         }
         Advance();
-        auto right   = ParserFactor();
+        auto right   = ParserPrimaryExpr();
         auto binExpr = sema.SemaBinaryExprNode(left, op, right);
         left         = binExpr;
     }
     return left;
 }
 
-/// @brief factor : identifier | number | "(" expr")"
-std::shared_ptr<ASTNode> Parser::ParserFactor() {
+/// @brief primary-expr : identifier | number | "(" expr")"
+std::shared_ptr<ASTNode> Parser::ParserPrimaryExpr() {
     if (token.tokenTy == TokenType::LeftParent) {
         Advance();
         auto expr = ParserExpr();

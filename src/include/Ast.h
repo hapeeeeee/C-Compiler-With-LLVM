@@ -148,10 +148,16 @@ class IfStmt : public ASTNode {
 };
 
 enum class OpCode {
-    Add = 0, ///< +
-    Sub,     ///< -
-    Mul,     ///< *
-    Div,     ///< /
+    Add = 0,      ///< +
+    Sub,          ///< -
+    Mul,          ///< *
+    Div,          ///< /
+    EqualEqual,   ///< ==
+    NotEqual,     ///< !=
+    Less,         ///< <
+    Greater,      ///< >
+    LessEqual,    ///< <=
+    GreaterEqual, ///< >=
 };
 
 class BinaryExpr : public ASTNode {

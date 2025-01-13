@@ -4,43 +4,46 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
     switch (ty) {
     case TokenType::Number:
         return "number";
-        break;
     case TokenType::Equal:
         return "=";
-        break;
+    case TokenType::EqualEqual:
+        return "==";
+    case TokenType::NotEqual:
+        return "!=";
+    case TokenType::Less:
+        return "<";
+    case TokenType::Greater:
+        return ">";
+    case TokenType::LessEqual:
+        return "<=";
+    case TokenType::GreaterEqual:
+        return ">=";
     case TokenType::Minus:
         return "-";
-        break;
     case TokenType::Plus:
         return "+";
-        break;
     case TokenType::Star:
         return "*";
-        break;
     case TokenType::Slash:
         return "/";
-        break;
     case TokenType::LeftParent:
         return "(";
-        break;
     case TokenType::RightParent:
         return ")";
-        break;
+    case TokenType::LeftBrace:
+        return "{";
+    case TokenType::RightBrace:
+        return "}";
     case TokenType::Comma:
         return ",";
-        break;
     case TokenType::Semi:
         return ";";
-        break;
     case TokenType::Identifier:
         return "Identifier";
-        break;
     case TokenType::KW_int:
         return "int";
-        break;
     case TokenType::Eof:
         return "Eof";
-        break;
     default:
         llvm::llvm_unreachable_internal();
         break;
@@ -90,8 +93,47 @@ void Lexer::NextToken(Token &tok) {
         KeyWordHandle(tok);
     } else {
         switch (*workPtr) {
+        case '!': {
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::NotEqual, workPtr, 2);
+                workPtr += 2;
+            } else {
+                diager.Report(
+                    llvm::SMLoc::getFromPointer(workPtr), diag::error_unknown_char, workPtr);
+            }
+            break;
+        }
         case '=': {
-            tok.setMember(TokenType::Equal, workPtr, 1);
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::EqualEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Equal, workPtr, 1);
+            }
+            workPtr++;
+            break;
+        }
+        case '<': {
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::LessEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Less, workPtr, 1);
+            }
+            workPtr++;
+            break;
+        }
+        case '>': {
+            const char *workNextPtr = workPtr + 1;
+            if (workNextPtr && *workNextPtr == '=') {
+                tok.setMember(TokenType::GreaterEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Greater, workPtr, 1);
+            }
             workPtr++;
             break;
         }
@@ -147,8 +189,6 @@ void Lexer::NextToken(Token &tok) {
         }
         default:
             diager.Report(llvm::SMLoc::getFromPointer(workPtr), diag::error_unknown_char, workPtr);
-            tok.tokenTy = TokenType::Unknown;
-            workPtr++;
             break;
         }
     }

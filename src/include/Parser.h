@@ -8,7 +8,7 @@
 
 /// @brief Syntax analyzer that uses recursive descent to parse input tokens into C language syntax
 /// @details The current grammar rules are as follows:
-/// +-----------------------------------------------------+
+/// +-----------------------------------------------------------------------------------+
 /// | prog            : stmt*
 /// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt
 /// | null-stmt       : ";"
@@ -16,14 +16,16 @@
 /// | expr-stmt       : expr ";"
 /// | if-stmt         : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
 /// | block-stmt      : "{" stmt* "}"
-/// | expr            : assign-expr | add-expr
-/// | assign-expr     : identifier "=" expr
+/// | expr            : assign-expr | equal-expr
+/// | assign-expr     : identifier ("=" expr)+
+/// | equal-expr      : relational-expr ( ("==" | "!=") relational-expr)*
+/// | relational-expr : add-expr (( ">" |"<" | "<=" | ">=") add-expr)*
 /// | add-expr        : mult-expr ( ("+" | "_") mult-expr)*
 /// | mult-expr       : primary-expr ( ("*" | "/") primary-expr)*
 /// | primary-expr    : identifier | number | "(" expr ")"
 /// | number          : ([0-9])+
 /// | identifier      : (a-zA-Z)(a-zA-Z0-9)*
-/// +-----------------------------------------------------+
+/// +----------------------------------------------------------------------------------+
 /// The grammar rules can also be referenced in bnf/bnf.txt
 class Parser {
   public:
@@ -43,8 +45,11 @@ class Parser {
     std::shared_ptr<ASTNode> ParserIfStmt();
     std::shared_ptr<ASTNode> ParserExpr();
     std::shared_ptr<ASTNode> ParserAssignExpr();
-    std::shared_ptr<ASTNode> ParserTerm();
-    std::shared_ptr<ASTNode> ParserFactor();
+    std::shared_ptr<ASTNode> ParserEqualExpr();
+    std::shared_ptr<ASTNode> ParserRelationalExpr();
+    std::shared_ptr<ASTNode> ParserAddExpr();
+    std::shared_ptr<ASTNode> ParserMultExpr();
+    std::shared_ptr<ASTNode> ParserPrimaryExpr();
 
   private:
     /// @brief Checks if the current token is the expected token without consuming it

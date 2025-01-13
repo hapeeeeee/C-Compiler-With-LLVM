@@ -1,10 +1,10 @@
 int a = 0;
 int b = 2;
-if (b) {
+if (b == 1) {
     b = 1;
     b = b + 1;
     b = b + 2;
-    if (a) {
+    if (a >= 0) {
         b = b + 3;
         b = b + 4;
     }

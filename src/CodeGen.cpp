@@ -58,20 +58,34 @@ llvm::Value *CodeGen::VisitBlockStmts(BlockStmts *blockStmts) {
 llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
     llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
-
+    llvm::Value *val;
     switch (binaryExpr->op) {
     case OpCode::Add:
         return irBuilder.CreateNSWAdd(left, right);
-        break;
     case OpCode::Sub:
         return irBuilder.CreateNSWSub(left, right);
-        break;
     case OpCode::Mul:
         return irBuilder.CreateNSWMul(left, right);
-        break;
     case OpCode::Div:
         return irBuilder.CreateSDiv(left, right);
-        break;
+    case OpCode::EqualEqual:
+        val = irBuilder.CreateICmpEQ(left, right);
+        return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
+    case OpCode::NotEqual:
+        val = irBuilder.CreateICmpNE(left, right);
+        return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
+    case OpCode::Less:
+        val = irBuilder.CreateICmpSLT(left, right);
+        return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
+    case OpCode::Greater:
+        val = irBuilder.CreateICmpSGT(left, right);
+        return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
+    case OpCode::LessEqual:
+        val = irBuilder.CreateICmpSLE(left, right);
+        return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
+    case OpCode::GreaterEqual:
+        val = irBuilder.CreateICmpSGE(left, right);
+        return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     default:
         break;
     }

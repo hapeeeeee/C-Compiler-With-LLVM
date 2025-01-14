@@ -31,6 +31,7 @@ enum class TokenType {
     KW_int,       ///< int
     KW_if,        ///< if
     KW_else,      ///< else
+    KW_for,       ///< for
     Eof           ///< end of file
 };
 

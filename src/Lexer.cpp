@@ -227,6 +227,8 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_if;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "else") {
         tok.tokenTy = TokenType::KW_else;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "for") {
+        tok.tokenTy = TokenType::KW_for;
     }
 }
 

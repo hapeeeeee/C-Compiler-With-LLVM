@@ -139,6 +139,48 @@ llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
     return nullptr;
 }
 
+llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
+    llvm::BasicBlock *initBB = llvm::BasicBlock::Create(llvmContext, "for.init", currFunc);
+    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(llvmContext, "for.cond", currFunc);
+    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(llvmContext, "for.then", currFunc);
+    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(llvmContext, "for.body", currFunc);
+    llvm::BasicBlock *lastBB = llvm::BasicBlock::Create(llvmContext, "for.last", currFunc);
+
+    /// for (initBB; condBB; thenBB) { bodyBB }
+    /// lastBB
+
+    irBuilder.CreateBr(initBB);
+    irBuilder.SetInsertPoint(initBB);
+    if (forStmt->initNode) {
+        forStmt->initNode->AcceptVisitor(this);
+    }
+
+    irBuilder.CreateBr(condBB);
+    irBuilder.SetInsertPoint(condBB);
+    if (forStmt->condNode) {
+        llvm::Value *val     = forStmt->condNode->AcceptVisitor(this);
+        llvm::Value *condVal = irBuilder.CreateICmpNE(val, irBuilder.getInt32(0));
+        irBuilder.CreateCondBr(condVal, bodyBB, lastBB);
+    } else {
+        irBuilder.CreateBr(bodyBB);
+    }
+
+    irBuilder.SetInsertPoint(bodyBB);
+    if (forStmt->bodyNode) {
+        forStmt->bodyNode->AcceptVisitor(this);
+    }
+    irBuilder.CreateBr(thenBB);
+
+    irBuilder.SetInsertPoint(thenBB);
+    if (forStmt->thenNode) {
+        forStmt->thenNode->AcceptVisitor(this);
+    }
+    irBuilder.CreateBr(condBB);
+
+    irBuilder.SetInsertPoint(lastBB);
+    return nullptr;
+}
+
 llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
     llvm::StringRef name(variableAssessExpr->token.ptr, variableAssessExpr->token.length);
     std::pair<llvm::Value *, llvm::Type *> pair = varAddrTypeMap[name];

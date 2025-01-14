@@ -10,11 +10,13 @@
 /// @details The current grammar rules are as follows:
 /// +-----------------------------------------------------------------------------------+
 /// | prog            : stmt*
-/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt
+/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt
 /// | null-stmt       : ";"
 /// | decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 /// | expr-stmt       : expr ";"
-/// | if-stmt         : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
+/// | if-stmt         : "if" "(" expr ")" stmt  ("else" stmt )?
+/// | for-stmt        : "for" "(" expr?       ; expr? ";" expr? ")"  stmt
+/// |                 : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt
 /// | block-stmt      : "{" stmt* "}"
 /// | expr            : assign-expr | equal-expr
 /// | assign-expr     : identifier ("=" expr)+
@@ -43,6 +45,7 @@ class Parser {
     std::shared_ptr<ASTNode> ParserBlockStmt();
     std::shared_ptr<ASTNode> ParserExprStmt();
     std::shared_ptr<ASTNode> ParserIfStmt();
+    std::shared_ptr<ASTNode> ParserForStmt();
     std::shared_ptr<ASTNode> ParserExpr();
     std::shared_ptr<ASTNode> ParserAssignExpr();
     std::shared_ptr<ASTNode> ParserEqualExpr();
@@ -52,6 +55,9 @@ class Parser {
     std::shared_ptr<ASTNode> ParserPrimaryExpr();
 
   private:
+    /// @brief Checks if the type name
+    bool IsTypeName();
+
     /// @brief Checks if the current token is the expected token without consuming it
     bool IsExcept(TokenType tokTy);
 

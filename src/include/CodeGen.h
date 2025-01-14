@@ -22,6 +22,7 @@ class CodeGen : public Visitor {
     llvm::Value *VisitBlockStmts(BlockStmts *blockStmts) override;
     llvm::Value *VisitVariableDecl(VariableDecl *VariableDecl) override;
     llvm::Value *VisitIfStmt(IfStmt *ifStmt) override;
+    llvm::Value *VisitForStmt(ForStmt *forStmt) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;

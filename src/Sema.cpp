@@ -10,6 +10,18 @@ std::shared_ptr<ASTNode> Sema::SemaIfStmtNode(std::shared_ptr<ASTNode> condExpr,
     return ifStmt;
 }
 
+std::shared_ptr<ASTNode> Sema::SemaForStmtNode(std::shared_ptr<ASTNode> initNode,
+                                               std::shared_ptr<ASTNode> condNode,
+                                               std::shared_ptr<ASTNode> thenNode,
+                                               std::shared_ptr<ASTNode> bodyNode) {
+    auto for_stmt      = std::make_shared<ForStmt>();
+    for_stmt->initNode = initNode;
+    for_stmt->condNode = condNode;
+    for_stmt->thenNode = thenNode;
+    for_stmt->bodyNode = bodyNode;
+    return for_stmt;
+}
+
 std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(CType *cType, Token &tok) {
     llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
     // Check is redefined for symbol

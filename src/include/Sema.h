@@ -21,6 +21,11 @@ class Sema {
                                             std::shared_ptr<ASTNode> thenStmt,
                                             std::shared_ptr<ASTNode> elseStmt);
 
+    std::shared_ptr<ASTNode> SemaForStmtNode(std::shared_ptr<ASTNode> initNode,
+                                             std::shared_ptr<ASTNode> condNode,
+                                             std::shared_ptr<ASTNode> thenNode,
+                                             std::shared_ptr<ASTNode> bodyNode);
+
     Sema(Diagnostics &diager) : diager(diager) {
     }
     std::shared_ptr<ASTNode> SemaVariableDeclNode(CType *cType, Token &tok);

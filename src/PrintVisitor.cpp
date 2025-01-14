@@ -55,6 +55,26 @@ llvm::Value *PrintVisitor::VisitIfStmt(IfStmt *ifStmt) {
     return nullptr;
 }
 
+llvm::Value *PrintVisitor::VisitForStmt(ForStmt *forStmt) {
+    llvm::outs() << "for ( ";
+    if (forStmt->initNode) {
+        forStmt->initNode->AcceptVisitor(this);
+    }
+    llvm::outs() << "; ";
+    if (forStmt->condNode) {
+        forStmt->condNode->AcceptVisitor(this);
+    }
+    llvm::outs() << "; ";
+    if (forStmt->thenNode) {
+        forStmt->thenNode->AcceptVisitor(this);
+    }
+    llvm::outs() << ") ";
+    if (forStmt->bodyNode) {
+        forStmt->bodyNode->AcceptVisitor(this);
+    }
+    return nullptr;
+}
+
 llvm::Value *PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     binaryExpr->leftExpr->AcceptVisitor(this);
 

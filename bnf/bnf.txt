@@ -1,9 +1,11 @@
 prog            : stmt*
-stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt
+stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt
 null-stmt       : ";"
 decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 expr-stmt       : expr ";"
-if-stmt         : "if" "(" expr ")"  stmt  ("else"  stmt )?
+if-stmt         : "if" "(" expr ")" stmt  ("else" stmt )?
+for-stmt        : "for" "(" expr?       ; expr? ";" expr? ")"  stmt  
+                : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt  
 block-stmt      : "{" stmt* "}"
 expr            : assign-expr | equal-expr
 assign-expr     : identifier ("=" expr)+     

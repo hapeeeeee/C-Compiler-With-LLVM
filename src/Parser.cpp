@@ -17,7 +17,7 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     return program;
 }
 
-/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt
+/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt
 std::shared_ptr<ASTNode> Parser::ParserStmt() {
     if (token.tokenTy == TokenType::Semi) { ///< null-stmt
         Advance();
@@ -26,6 +26,8 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
         return ParserDeclStmt();
     } else if (token.tokenTy == TokenType::KW_if) { ///< if-stmt
         return ParserIfStmt();
+    } else if (token.tokenTy == TokenType::KW_for) { ///< for-stmt
+        return ParserForStmt();
     } else if (token.tokenTy == TokenType::LeftBrace) { ///< block-stmt
         return ParserBlockStmt();
     } else { ///< expr-stmt
@@ -36,8 +38,7 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
 /// @brief decl-stmt : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     Consume(TokenType::KW_int);
-    CType *cTy = CType::getIntTy();
-
+    CType *cTy    = CType::getIntTy();
     auto declNode = std::make_shared<DeclStmts>();
     // int a = 1, c = 2, d;
     while (token.tokenTy != TokenType::Semi) {
@@ -82,7 +83,7 @@ std::shared_ptr<ASTNode> Parser::ParserExprStmt() {
     return expr;
 }
 
-/// @brief if-stmt : "if" "(" expr ")" "{" stmt  "}" ("else" "{" stmt "}")?
+/// @brief if-stmt : "if" "(" expr ")" stmt  ("else" stmt )?
 std::shared_ptr<ASTNode> Parser::ParserIfStmt() {
     Consume(TokenType::KW_if);
     Consume(TokenType::LeftParent);
@@ -95,6 +96,37 @@ std::shared_ptr<ASTNode> Parser::ParserIfStmt() {
         elseStmt = ParserStmt();
     }
     return sema.SemaIfStmtNode(condExpr, thenStmt, elseStmt);
+}
+
+/// @brief for-stmt : "for" "(" expr?       ; expr? ";" expr? ")"  stmt
+///                 : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt
+std::shared_ptr<ASTNode> Parser::ParserForStmt() {
+    Consume(TokenType::KW_for);
+    Consume(TokenType::LeftParent);
+    sema.EnterScope();
+    std::shared_ptr<ASTNode> initNode = nullptr, condNode = nullptr, thenNode = nullptr,
+                             bodyNode = nullptr;
+    if (IsTypeName()) {
+        initNode = ParserDeclStmt();
+    } else {
+        if (token.tokenTy != TokenType::Semi) {
+            initNode = ParserExpr();
+        }
+        Consume(TokenType::Semi);
+    }
+
+    if (token.tokenTy != TokenType::Semi) {
+        condNode = ParserExpr();
+    }
+    Consume(TokenType::Semi);
+    if (token.tokenTy != TokenType::RightParent) {
+        thenNode = ParserExpr();
+    }
+    Consume(TokenType::RightParent);
+    bodyNode  = ParserStmt();
+    auto node = sema.SemaForStmtNode(initNode, condNode, thenNode, bodyNode);
+    sema.ExitScope();
+    return node;
 }
 
 /// @brief expr : assign-expr | equal-expr
@@ -221,6 +253,13 @@ std::shared_ptr<ASTNode> Parser::ParserPrimaryExpr() {
         Advance();
         return factorExpr;
     }
+}
+
+bool Parser::IsTypeName() {
+    if (token.tokenTy == TokenType::KW_int) {
+        return true;
+    }
+    return false;
 }
 
 bool Parser::IsExcept(TokenType tokTy) {

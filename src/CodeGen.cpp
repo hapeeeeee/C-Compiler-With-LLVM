@@ -132,8 +132,8 @@ llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
     } else {
         irBuilder.CreateCondBr(condVal, thenBB, lastBB);
         irBuilder.SetInsertPoint(thenBB);
-        ifStmt->thenStmt->AcceptVisitor(this);
-        irBuilder.CreateBr(lastBB);
+        ifStmt->thenStmt->AcceptVisitor(this); // if {then(break) }
+        irBuilder.CreateBr(lastBB);            // death
     }
     irBuilder.SetInsertPoint(lastBB);
     return nullptr;
@@ -146,8 +146,8 @@ llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
     llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(llvmContext, "for.body", currFunc);
     llvm::BasicBlock *lastBB = llvm::BasicBlock::Create(llvmContext, "for.last", currFunc);
 
-    /// for (initBB; condBB; thenBB) { bodyBB }
-    /// lastBB
+    breakTargetBBs.insert({forStmt, lastBB});
+    continueTargetBBs.insert({forStmt, thenBB});
 
     irBuilder.CreateBr(initBB);
     irBuilder.SetInsertPoint(initBB);
@@ -178,6 +178,26 @@ llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
     irBuilder.CreateBr(condBB);
 
     irBuilder.SetInsertPoint(lastBB);
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitBreakStmt(BreakStmt *breakStmt) {
+    auto a                     = breakStmt->fatherNode.get();
+    llvm::BasicBlock *targetBB = breakTargetBBs[a];
+    irBuilder.CreateBr(targetBB);
+
+    llvm::BasicBlock *deathBB = llvm::BasicBlock::Create(llvmContext, "for.break.death", currFunc);
+    irBuilder.SetInsertPoint(deathBB);
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitContinueStmt(ContinueStmt *continueStmt) {
+    llvm::BasicBlock *targetBB = continueTargetBBs[continueStmt->fatherNode.get()];
+    irBuilder.CreateBr(targetBB);
+
+    llvm::BasicBlock *deathBB =
+        llvm::BasicBlock::Create(llvmContext, "for.continue.death", currFunc);
+    irBuilder.SetInsertPoint(deathBB);
     return nullptr;
 }
 

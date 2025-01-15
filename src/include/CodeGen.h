@@ -2,6 +2,7 @@
 #ifndef _CODEGEN_H_
 #define _CODEGEN_H_
 #include "Ast.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -23,6 +24,8 @@ class CodeGen : public Visitor {
     llvm::Value *VisitVariableDecl(VariableDecl *VariableDecl) override;
     llvm::Value *VisitIfStmt(IfStmt *ifStmt) override;
     llvm::Value *VisitForStmt(ForStmt *forStmt) override;
+    llvm::Value *VisitBreakStmt(BreakStmt *breakStmt) override;
+    llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
@@ -33,6 +36,11 @@ class CodeGen : public Visitor {
     llvm::IRBuilder<> irBuilder{llvmContext};
     std::shared_ptr<llvm::Module> llvmModule;
     llvm::Function *currFunc{nullptr};
+
+    llvm::DenseMap<ASTNode *, llvm::BasicBlock *>
+        breakTargetBBs; ///< Target block for the break statement
+    llvm::DenseMap<ASTNode *, llvm::BasicBlock *>
+        continueTargetBBs; ///< Target block for the continue statement
     llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> varAddrTypeMap;
 };
 

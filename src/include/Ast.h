@@ -20,6 +20,8 @@ class DeclStmts;
 class BlockStmts;
 class IfStmt;
 class ForStmt;
+class BreakStmt;
+class ContinueStmt;
 
 /// @brief Base class for the visitor in the Visitor design pattern.
 /// @details This class defines a set of pure virtual functions to visit different nodes of an
@@ -37,6 +39,8 @@ class Visitor {
     virtual llvm::Value *VisitBlockStmts(BlockStmts *blockStmts)                         = 0;
     virtual llvm::Value *VisitIfStmt(IfStmt *ifStmt)                                     = 0;
     virtual llvm::Value *VisitForStmt(ForStmt *forStmt)                                  = 0;
+    virtual llvm::Value *VisitBreakStmt(BreakStmt *breakStmt)                            = 0;
+    virtual llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt)                   = 0;
     virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
@@ -62,6 +66,8 @@ class ASTNode {
         ND_VariableDecl,
         ND_IfStmt,
         ND_ForStmt,
+        ND_BreakStmt,
+        ND_ContinueStmt,
         ND_BinaryExpr,
         ND_NumberExpr,
         ND_VariableAssessExpr,
@@ -167,6 +173,40 @@ class ForStmt : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_ForStmt;
+    }
+};
+
+class BreakStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> fatherNode;
+
+  public:
+    BreakStmt() : ASTNode(Nodekind::ND_BreakStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitBreakStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_BreakStmt;
+    }
+};
+
+class ContinueStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> fatherNode;
+
+  public:
+    ContinueStmt() : ASTNode(Nodekind::ND_ContinueStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitContinueStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_ContinueStmt;
     }
 };
 

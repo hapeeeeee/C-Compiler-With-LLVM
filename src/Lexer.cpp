@@ -229,6 +229,10 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_else;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "for") {
         tok.tokenTy = TokenType::KW_for;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "break") {
+        tok.tokenTy = TokenType::KW_break;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "continue") {
+        tok.tokenTy = TokenType::KW_continue;
     }
 }
 

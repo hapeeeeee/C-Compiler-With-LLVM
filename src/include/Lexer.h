@@ -32,6 +32,8 @@ enum class TokenType {
     KW_if,        ///< if
     KW_else,      ///< else
     KW_for,       ///< for
+    KW_break,     ///< break
+    KW_continue,  ///< continue
     Eof           ///< end of file
 };
 

@@ -17,7 +17,8 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     return program;
 }
 
-/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt
+/// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt |
+///               for-stmt  | break-stmt | continue-stmt
 std::shared_ptr<ASTNode> Parser::ParserStmt() {
     if (token.tokenTy == TokenType::Semi) { ///< null-stmt
         Advance();
@@ -28,6 +29,10 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
         return ParserIfStmt();
     } else if (token.tokenTy == TokenType::KW_for) { ///< for-stmt
         return ParserForStmt();
+    } else if (token.tokenTy == TokenType::KW_break) { ///< for-stmt
+        return ParserBreakStmt();
+    } else if (token.tokenTy == TokenType::KW_continue) { ///< for-stmt
+        return ParserContinueStmt();
     } else if (token.tokenTy == TokenType::LeftBrace) { ///< block-stmt
         return ParserBlockStmt();
     } else { ///< expr-stmt
@@ -103,6 +108,9 @@ std::shared_ptr<ASTNode> Parser::ParserIfStmt() {
 std::shared_ptr<ASTNode> Parser::ParserForStmt() {
     Consume(TokenType::KW_for);
     Consume(TokenType::LeftParent);
+    auto for_stmt = std::make_shared<ForStmt>();
+    nodesContainBreak.push_back(for_stmt);
+    nodesContainContinue.push_back(for_stmt);
     sema.EnterScope();
     std::shared_ptr<ASTNode> initNode = nullptr, condNode = nullptr, thenNode = nullptr,
                              bodyNode = nullptr;
@@ -123,9 +131,41 @@ std::shared_ptr<ASTNode> Parser::ParserForStmt() {
         thenNode = ParserExpr();
     }
     Consume(TokenType::RightParent);
-    bodyNode  = ParserStmt();
-    auto node = sema.SemaForStmtNode(initNode, condNode, thenNode, bodyNode);
+    bodyNode           = ParserStmt();
+    for_stmt->initNode = initNode;
+    for_stmt->condNode = condNode;
+    for_stmt->thenNode = thenNode;
+    for_stmt->bodyNode = bodyNode;
     sema.ExitScope();
+    nodesContainBreak.pop_back();
+    nodesContainContinue.pop_back();
+
+    return for_stmt;
+}
+
+/// @brief  break-stmt : "break" ";"
+std::shared_ptr<ASTNode> Parser::ParserBreakStmt() {
+    if (nodesContainBreak.size() == 0) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr),
+                                diag::error_break_not_in_loop);
+    }
+    Consume(TokenType::KW_break);
+    Consume(TokenType::Semi);
+    auto node        = std::make_shared<BreakStmt>();
+    node->fatherNode = nodesContainBreak.back();
+    return node;
+}
+
+/// @brief  continue-stmt : "continue" ";"
+std::shared_ptr<ASTNode> Parser::ParserContinueStmt() {
+    if (nodesContainContinue.size() == 0) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr),
+                                diag::error_continue_not_in_loop);
+    }
+    Consume(TokenType::KW_continue);
+    Consume(TokenType::Semi);
+    auto node        = std::make_shared<ContinueStmt>();
+    node->fatherNode = nodesContainContinue.back();
     return node;
 }
 

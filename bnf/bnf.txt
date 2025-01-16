@@ -9,12 +9,17 @@ for-stmt        : "for" "(" expr?       ; expr? ";" expr? ")"  stmt
 break-stmt      : "break" ";"
 continue-stmt   : "continue" ";"
 block-stmt      : "{" stmt* "}"
-expr            : assign-expr | equal-expr
+expr            : assign-expr | logicor-expr
 assign-expr     : identifier ("=" expr)+     
+logicor-expr    : logicand-expr ("||" logicand-expr)*
+logicand-expr   : bitor-expr ("&&" bitor-expr)*
+bitor-expr      : bitxor-expr ("|" bitxor-expr)*
+bitxor-expr     : bitand-expr ("^" bitand-expr)*
+bitand-expr     : equal-expr ("&" equal-expr)*
 equal-expr      : relational-expr ( ("==" | "!=") relational-expr)*
 relational-expr : add-expr (( ">" |"<" | "<=" | ">=") add-expr)*
 add-expr        : mult-expr ( ("+" | "_") mult-expr)*
-mult-expr       : primary-expr ( ("*" | "/") primary-expr)*
+mult-expr       : primary-expr ( ("*" | "/" | "%") primary-expr)*
 primary-expr    : identifier | number | "(" expr ")"
 number          : ([0-9])+
 identifier      : (a-zA-Z)(a-zA-Z0-9)*

@@ -18,6 +18,16 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "<=";
     case TokenType::GreaterEqual:
         return ">=";
+    case TokenType::PipePipe:
+        return "||";
+    case TokenType::Pipe:
+        return "|";
+    case TokenType::AmpAmp:
+        return "&&";
+    case TokenType::Amp:
+        return "&";
+    case TokenType::Caret:
+        return "^";
     case TokenType::Minus:
         return "-";
     case TokenType::Plus:
@@ -26,6 +36,8 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "*";
     case TokenType::Slash:
         return "/";
+    case TokenType::Percent:
+        return "%";
     case TokenType::LeftParent:
         return "(";
     case TokenType::RightParent:
@@ -60,7 +72,27 @@ Lexer::Lexer(llvm::SourceMgr &mgr, Diagnostics &diag) : mgr(mgr), diager(diag) {
 }
 
 void Lexer::NextToken(Token &tok) {
-    while (IsWhiteSpace(*workPtr)) {
+    while (IsWhiteSpace(*workPtr) || StartsWith("//") || StartsWith("/*")) {
+        if (StartsWith("//")) { // Some Comment
+            while (*workPtr != '\n') {
+                workPtr++;
+            }
+            workRow++;
+            workRowHeadPtr = workPtr + 1;
+        }
+
+        if (StartsWith("/*")) { /* Some Comment */
+            workPtr += 2;
+            while (workPtr[0] != '*' && workPtr[1] != '/') {
+                if (*workPtr == '\n') {
+                    workRow++;
+                    workRowHeadPtr = workPtr + 1;
+                }
+                workPtr++;
+            }
+            workPtr += 2;
+        }
+
         if (*workPtr == '\n') {
             workRow++;
             workRowHeadPtr = workPtr + 1;
@@ -137,6 +169,33 @@ void Lexer::NextToken(Token &tok) {
             workPtr++;
             break;
         }
+        case '|': {
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '|') {
+                tok.setMember(TokenType::PipePipe, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Pipe, workPtr, 1);
+            }
+            workPtr++;
+            break;
+        }
+        case '&': {
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '&') {
+                tok.setMember(TokenType::AmpAmp, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Amp, workPtr, 1);
+            }
+            workPtr++;
+            break;
+        }
+        case '^': {
+            tok.setMember(TokenType::Caret, workPtr, 1);
+            workPtr++;
+            break;
+        }
         case '+': {
             tok.setMember(TokenType::Plus, workPtr, 1);
             workPtr++;
@@ -154,6 +213,11 @@ void Lexer::NextToken(Token &tok) {
         }
         case '/': {
             tok.setMember(TokenType::Slash, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case '%': {
+            tok.setMember(TokenType::Percent, workPtr, 1);
             workPtr++;
             break;
         }
@@ -234,6 +298,10 @@ void Lexer::KeyWordHandle(Token &tok) {
     } else if (llvm::StringRef(tok.ptr, tok.length) == "continue") {
         tok.tokenTy = TokenType::KW_continue;
     }
+}
+
+bool Lexer::StartsWith(const char *p) {
+    return !strncmp(workPtr, p, strlen(p));
 }
 
 bool Lexer::IsWhiteSpace(char ch) {

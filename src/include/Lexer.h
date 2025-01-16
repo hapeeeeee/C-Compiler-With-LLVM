@@ -17,10 +17,16 @@ enum class TokenType {
     Greater,      ///< >
     LessEqual,    ///< <=
     GreaterEqual, ///< >=
+    PipePipe,     ///< ||
+    AmpAmp,       ///< &&
+    Pipe,         ///< |
+    Amp,          ///< &
+    Caret,        ///< ^
     Minus,        ///< -
     Plus,         ///< +
     Star,         ///< *
     Slash,        ///< /
+    Percent,      ///< %
     LeftParent,   ///< (
     RightParent,  ///< )
     LeftBrace,    ///< {
@@ -114,6 +120,7 @@ class Lexer {
   private:
     void KeyWordHandle(Token &tok);
     bool IsWhiteSpace(char ch);
+    bool StartsWith(const char *p);
     bool IsDigit(char ch);
     bool IsLetter(char ch);
 };

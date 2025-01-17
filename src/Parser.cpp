@@ -169,7 +169,7 @@ std::shared_ptr<ASTNode> Parser::ParserContinueStmt() {
     return node;
 }
 
-/// @brief expr : assign-expr | equal-expr
+/// @brief expr : assign-expr | logicor-expr
 std::shared_ptr<ASTNode> Parser::ParserExpr() {
     bool isAssignExpr = false;
     lexer.SaveState();
@@ -185,7 +185,8 @@ std::shared_ptr<ASTNode> Parser::ParserExpr() {
     if (isAssignExpr) {
         return ParserAssignExpr();
     }
-    return ParserEqualExpr();
+
+    return ParserLogicOrExpr();
 }
 
 /// @brief assign-expr : identifier ("=" expr)+
@@ -198,7 +199,67 @@ std::shared_ptr<ASTNode> Parser::ParserAssignExpr() {
     return sema.SemaAssignExprNode(leftExpr, ParserExpr(), tok);
 }
 
-/// @brief equal-expr  : relational-expr ( ("==" | "!=") relational-expr)*
+/// @brief logicor-expr : logicand-expr ("||" logicand-expr)*
+std::shared_ptr<ASTNode> Parser::ParserLogicOrExpr() {
+    auto left = ParserLogicAndExpr();
+    while (token.tokenTy == TokenType::PipePipe) {
+        OpCode op = OpCode::LogicOr;
+        Advance();
+        auto right = ParserLogicAndExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief logicand-expr : bitor-expr ("&&" bitor-expr)*
+std::shared_ptr<ASTNode> Parser::ParserLogicAndExpr() {
+    auto left = ParserBitOrExpr();
+    while (token.tokenTy == TokenType::AmpAmp) {
+        OpCode op = OpCode::LogicAnd;
+        Advance();
+        auto right = ParserBitOrExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief bitor-expr : bitxor-expr ("|" bitxor-expr)*
+std::shared_ptr<ASTNode> Parser::ParserBitOrExpr() {
+    auto left = ParserBitXorExpr();
+    while (token.tokenTy == TokenType::Pipe) {
+        OpCode op = OpCode::BitOr;
+        Advance();
+        auto right = ParserBitXorExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief bitxor-expr : bitand-expr ("^" bitand-expr)*
+std::shared_ptr<ASTNode> Parser::ParserBitXorExpr() {
+    auto left = ParserBitAndExpr();
+    while (token.tokenTy == TokenType::Caret) {
+        OpCode op = OpCode::BitXor;
+        Advance();
+        auto right = ParserBitAndExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief bitand-expr : equal-expr ("&" equal-expr)*
+std::shared_ptr<ASTNode> Parser::ParserBitAndExpr() {
+    auto left = ParserEqualExpr();
+    while (token.tokenTy == TokenType::Amp) {
+        OpCode op = OpCode::BitAnd;
+        Advance();
+        auto right = ParserEqualExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief equal-expr : relational-expr ( ("==" | "!=") relational-expr)*
 std::shared_ptr<ASTNode> Parser::ParserEqualExpr() {
     auto left = ParserRelationalExpr();
     while (token.tokenTy == TokenType::EqualEqual || token.tokenTy == TokenType::NotEqual) {
@@ -215,9 +276,9 @@ std::shared_ptr<ASTNode> Parser::ParserEqualExpr() {
     return left;
 }
 
-/// @brief relational-expr : add-expr (( ">" |"<" | "<=" | ">=") add-expr)*
+/// @brief relational-expr : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
 std::shared_ptr<ASTNode> Parser::ParserRelationalExpr() {
-    auto left = ParserAddExpr();
+    auto left = ParserShiftExpr();
     while (token.tokenTy == TokenType::Less || token.tokenTy == TokenType::LessEqual ||
            token.tokenTy == TokenType::Greater || token.tokenTy == TokenType::GreaterEqual) {
         OpCode op;
@@ -229,6 +290,23 @@ std::shared_ptr<ASTNode> Parser::ParserRelationalExpr() {
             op = OpCode::Greater;
         } else {
             op = OpCode::GreaterEqual;
+        }
+        Advance();
+        auto right = ParserShiftExpr();
+        left       = sema.SemaBinaryExprNode(left, op, right);
+    }
+    return left;
+}
+
+/// @brief shift-expr : add-expr ( ("<<" | ">>") add-expr )*
+std::shared_ptr<ASTNode> Parser::ParserShiftExpr() {
+    auto left = ParserAddExpr();
+    while (token.tokenTy == TokenType::LessLess || token.tokenTy == TokenType::GreaterGreater) {
+        OpCode op;
+        if (token.tokenTy == TokenType::LessLess) {
+            op = OpCode::LeftShift;
+        } else {
+            op = OpCode::RightShift;
         }
         Advance();
         auto right = ParserAddExpr();
@@ -256,16 +334,19 @@ std::shared_ptr<ASTNode> Parser::ParserAddExpr() {
     return left;
 }
 
-/// @brief mult-expr : primary-expr ( ("*" | "/") primary-expr)*
+/// @brief mult-expr : primary-expr ( ("*" | "/" | "%") primary-expr)*
 std::shared_ptr<ASTNode> Parser::ParserMultExpr() {
     auto left = ParserPrimaryExpr();
     // a * b * c * d...
-    while (token.tokenTy == TokenType::Star || token.tokenTy == TokenType::Slash) {
+    while (token.tokenTy == TokenType::Star || token.tokenTy == TokenType::Slash ||
+           token.tokenTy == TokenType::Percent) {
         OpCode op;
         if (token.tokenTy == TokenType::Star) {
             op = OpCode::Mul;
-        } else {
+        } else if (token.tokenTy == TokenType::Slash) {
             op = OpCode::Div;
+        } else {
+            op = OpCode::Mod;
         }
         Advance();
         auto right   = ParserPrimaryExpr();

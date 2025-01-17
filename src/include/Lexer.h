@@ -9,38 +9,40 @@
 
 enum class TokenType {
     Unknown = 0,
-    Number,       ///< literal number
-    Equal,        ///< =
-    EqualEqual,   ///< ==
-    NotEqual,     ///< !=
-    Less,         ///< <
-    Greater,      ///< >
-    LessEqual,    ///< <=
-    GreaterEqual, ///< >=
-    PipePipe,     ///< ||
-    AmpAmp,       ///< &&
-    Pipe,         ///< |
-    Amp,          ///< &
-    Caret,        ///< ^
-    Minus,        ///< -
-    Plus,         ///< +
-    Star,         ///< *
-    Slash,        ///< /
-    Percent,      ///< %
-    LeftParent,   ///< (
-    RightParent,  ///< )
-    LeftBrace,    ///< {
-    RightBrace,   ///< }
-    Comma,        ///< ,
-    Semi,         ///< ;
-    Identifier,   ///< variable name
-    KW_int,       ///< int
-    KW_if,        ///< if
-    KW_else,      ///< else
-    KW_for,       ///< for
-    KW_break,     ///< break
-    KW_continue,  ///< continue
-    Eof           ///< end of file
+    Number,         ///< literal number
+    Equal,          ///< =
+    EqualEqual,     ///< ==
+    NotEqual,       ///< !=
+    Less,           ///< <
+    Greater,        ///< >
+    LessEqual,      ///< <=
+    GreaterEqual,   ///< >=
+    PipePipe,       ///< ||
+    AmpAmp,         ///< &&
+    Pipe,           ///< |
+    Amp,            ///< &
+    Caret,          ///< ^
+    LessLess,       ///< <<
+    GreaterGreater, ///< >>
+    Minus,          ///< -
+    Plus,           ///< +
+    Star,           ///< *
+    Slash,          ///< /
+    Percent,        ///< %
+    LeftParent,     ///< (
+    RightParent,    ///< )
+    LeftBrace,      ///< {
+    RightBrace,     ///< }
+    Comma,          ///< ,
+    Semi,           ///< ;
+    Identifier,     ///< variable name
+    KW_int,         ///< int
+    KW_if,          ///< if
+    KW_else,        ///< else
+    KW_for,         ///< for
+    KW_break,       ///< break
+    KW_continue,    ///< continue
+    Eof             ///< end of file
 };
 
 /// @brief Represents a token with its position, type, and value

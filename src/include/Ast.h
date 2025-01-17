@@ -215,12 +215,20 @@ enum class OpCode {
     Sub,          ///< -
     Mul,          ///< *
     Div,          ///< /
+    Mod,          ///< %
+    LeftShift,    ///< <<
+    RightShift,   ///< >>
     EqualEqual,   ///< ==
     NotEqual,     ///< !=
     Less,         ///< <
     Greater,      ///< >
     LessEqual,    ///< <=
     GreaterEqual, ///< >=
+    LogicOr,      ///< ||
+    LogicAnd,     ///< &&
+    BitOr,        ///< |
+    BitXor,       ///< ^
+    BitAnd,       ///< &
 };
 
 class BinaryExpr : public ASTNode {

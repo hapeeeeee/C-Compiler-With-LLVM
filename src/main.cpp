@@ -31,12 +31,12 @@ int main(int argc, char *argv[]) {
     // std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
     Lexer lex(mgr, diag);
     Token tok;
-    lex.Run(tok);
-    // Sema sema(diag);
-    // Parser parser(lex, sema);
-    // std::shared_ptr<Program> program = parser.ParserProgram();
-    // // PrintVisitor printVisitor(program);
-    // CodeGen codeGen(program);
+    // lex.Run(tok);
+    Sema sema(diag);
+    Parser parser(lex, sema);
+    std::shared_ptr<Program> program = parser.ParserProgram();
+    // PrintVisitor printVisitor(program);
+    CodeGen codeGen(program);
 
     return 0;
 }

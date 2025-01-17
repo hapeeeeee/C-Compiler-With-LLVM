@@ -38,6 +38,10 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "/";
     case TokenType::Percent:
         return "%";
+    case TokenType::LessLess:
+        return "<<";
+    case TokenType::GreaterGreater:
+        return ">>";
     case TokenType::LeftParent:
         return "(";
     case TokenType::RightParent:
@@ -118,7 +122,7 @@ void Lexer::NextToken(Token &tok) {
         tok.setMember(
             TokenType::Number, tokenStart, workPtr - tokenStart, number, CType::getIntTy());
     } else if (IsLetter(*workPtr)) {
-        while (IsLetter(*workPtr)) {
+        while (IsLetter(*workPtr) || IsDigit(*workPtr)) {
             workPtr++;
         }
         tok.setMember(TokenType::Identifier, tokenStart, workPtr - tokenStart);
@@ -152,6 +156,9 @@ void Lexer::NextToken(Token &tok) {
             if (*workNextPtr == '=') {
                 tok.setMember(TokenType::LessEqual, workPtr, 2);
                 workPtr++;
+            } else if (*workNextPtr == '<') {
+                tok.setMember(TokenType::LessLess, workPtr, 2);
+                workPtr++;
             } else {
                 tok.setMember(TokenType::Less, workPtr, 1);
             }
@@ -162,6 +169,9 @@ void Lexer::NextToken(Token &tok) {
             const char *workNextPtr = workPtr + 1;
             if (workNextPtr && *workNextPtr == '=') {
                 tok.setMember(TokenType::GreaterEqual, workPtr, 2);
+                workPtr++;
+            } else if (*workNextPtr == '>') {
+                tok.setMember(TokenType::GreaterGreater, workPtr, 2);
                 workPtr++;
             } else {
                 tok.setMember(TokenType::Greater, workPtr, 1);

@@ -7,71 +7,106 @@ declare i32 @printf(ptr, ...)
 
 define i32 @main() {
 entry:
-  %b = alloca i32, align 4
-  store i32 0, ptr %b, align 4
-  %b1 = load i32, ptr %b, align 4
-  br label %for.init
+  %a1 = alloca i32, align 4
+  store i32 1, ptr %a1, align 4
+  %a11 = load i32, ptr %a1, align 4
+  %a2 = alloca i32, align 4
+  store i32 0, ptr %a2, align 4
+  %a22 = load i32, ptr %a2, align 4
+  %a3 = alloca i32, align 4
+  store i32 1, ptr %a3, align 4
+  %a33 = load i32, ptr %a3, align 4
+  %a4 = alloca i32, align 4
+  store i32 1159, ptr %a4, align 4
+  %a44 = load i32, ptr %a4, align 4
+  %a5 = alloca i32, align 4
+  store i32 1, ptr %a5, align 4
+  %a55 = load i32, ptr %a5, align 4
+  %a6 = alloca i32, align 4
+  store i32 1, ptr %a6, align 4
+  %a66 = load i32, ptr %a6, align 4
+  %a7 = alloca i32, align 4
+  store i32 1, ptr %a7, align 4
+  %a77 = load i32, ptr %a7, align 4
+  %a8 = alloca i32, align 4
+  store i32 1984, ptr %a8, align 4
+  %a88 = load i32, ptr %a8, align 4
+  %b1 = alloca i32, align 4
+  %a19 = load i32, ptr %a1, align 4
+  %0 = icmp ne i32 %a19, 0
+  br i1 %0, label %nextBB, label %falseBB
 
-for.init:                                         ; preds = %entry
-  %i = alloca i32, align 4
-  store i32 0, ptr %i, align 4
-  %i2 = load i32, ptr %i, align 4
-  br label %for.cond
+falseBB:                                          ; preds = %entry
+  br label %mergeBB
 
-for.cond:                                         ; preds = %for.then, %for.init
-  %i3 = load i32, ptr %i, align 4
-  %0 = icmp slt i32 %i3, 10
-  %1 = sext i1 %0 to i32
-  %2 = icmp ne i32 %1, 0
-  br i1 %2, label %for.body, label %for.last
+nextBB:                                           ; preds = %entry
+  %1 = icmp ne i32 %a19, 0
+  br label %mergeBB
 
-for.then:                                         ; preds = %for.continue.death, %last
-  %i15 = load i32, ptr %i, align 4
-  %3 = add nsw i32 %i15, 1
-  store i32 %3, ptr %i, align 4
-  %i16 = load i32, ptr %i, align 4
-  br label %for.cond
+mergeBB:                                          ; preds = %falseBB, %nextBB
+  %2 = phi i32 [ 0, %falseBB ], [ 1, %nextBB ]
+  store i32 %2, ptr %b1, align 4
+  %b110 = load i32, ptr %b1, align 4
+  %b2 = alloca i32, align 4
+  %a213 = load i32, ptr %a2, align 4
+  %3 = icmp ne i32 %a213, 0
+  br i1 %3, label %trueBB, label %nextBB11
 
-for.body:                                         ; preds = %for.cond
-  %b4 = load i32, ptr %b, align 4
-  %i5 = load i32, ptr %i, align 4
-  %4 = add nsw i32 %b4, %i5
-  store i32 %4, ptr %b, align 4
-  %b6 = load i32, ptr %b, align 4
-  br label %cond
+trueBB:                                           ; preds = %mergeBB
+  br label %mergeBB12
 
-for.last:                                         ; preds = %then, %for.cond
-  %b17 = load i32, ptr %b, align 4
-  %5 = call i32 (ptr, ...) @printf(ptr @0, i32 %b17)
+nextBB11:                                         ; preds = %mergeBB
+  br label %mergeBB12
+
+mergeBB12:                                        ; preds = %nextBB11, %trueBB
+  %4 = phi i32 [ 1, %trueBB ], [ 0, %nextBB11 ]
+  store i32 %4, ptr %b2, align 4
+  %b214 = load i32, ptr %b2, align 4
+  %b3 = alloca i32, align 4
+  %a315 = load i32, ptr %a3, align 4
+  %5 = shl i32 %a315, 2
+  store i32 %5, ptr %b3, align 4
+  %b316 = load i32, ptr %b3, align 4
+  %b4 = alloca i32, align 4
+  %a417 = load i32, ptr %a4, align 4
+  %6 = lshr i32 %a417, 2
+  store i32 %6, ptr %b4, align 4
+  %b418 = load i32, ptr %b4, align 4
+  %b5 = alloca i32, align 4
+  %a519 = load i32, ptr %a5, align 4
+  %7 = and i32 %a519, 11
+  store i32 %7, ptr %b5, align 4
+  %b520 = load i32, ptr %b5, align 4
+  %b6 = alloca i32, align 4
+  %a621 = load i32, ptr %a6, align 4
+  %8 = or i32 %a621, 7
+  store i32 %8, ptr %b6, align 4
+  %b622 = load i32, ptr %b6, align 4
+  %b7 = alloca i32, align 4
+  %a723 = load i32, ptr %a7, align 4
+  %9 = xor i32 %a723, 78
+  store i32 %9, ptr %b7, align 4
+  %b724 = load i32, ptr %b7, align 4
+  %b8 = alloca i32, align 4
+  %a825 = load i32, ptr %a8, align 4
+  %10 = srem i32 %a825, 10
+  store i32 %10, ptr %b8, align 4
+  %b826 = load i32, ptr %b8, align 4
+  %b127 = load i32, ptr %b1, align 4
+  %b228 = load i32, ptr %b2, align 4
+  %11 = add nsw i32 %b127, %b228
+  %b329 = load i32, ptr %b3, align 4
+  %12 = add nsw i32 %11, %b329
+  %b430 = load i32, ptr %b4, align 4
+  %13 = add nsw i32 %12, %b430
+  %b531 = load i32, ptr %b5, align 4
+  %14 = add nsw i32 %13, %b531
+  %b632 = load i32, ptr %b6, align 4
+  %15 = add nsw i32 %14, %b632
+  %b733 = load i32, ptr %b7, align 4
+  %16 = add nsw i32 %15, %b733
+  %b834 = load i32, ptr %b8, align 4
+  %17 = add nsw i32 %16, %b834
+  %18 = call i32 (ptr, ...) @printf(ptr @0, i32 %17)
   ret i32 0
-
-cond:                                             ; preds = %for.body
-  %i7 = load i32, ptr %i, align 4
-  %6 = icmp eq i32 %i7, 5
-  %7 = sext i1 %6 to i32
-  %8 = icmp ne i32 %7, 0
-  br i1 %8, label %then, label %last
-
-then:                                             ; preds = %cond
-  br label %for.last
-
-last:                                             ; preds = %for.break.death, %cond
-  %b9 = load i32, ptr %b, align 4
-  %i10 = load i32, ptr %i, align 4
-  %9 = add nsw i32 %b9, %i10
-  store i32 %9, ptr %b, align 4
-  %b11 = load i32, ptr %b, align 4
-  br label %for.then
-
-for.break.death:                                  ; No predecessors!
-  %b8 = load i32, ptr %b, align 4
-  br label %last
-
-for.continue.death:                               ; No predecessors!
-  %b12 = load i32, ptr %b, align 4
-  %i13 = load i32, ptr %i, align 4
-  %10 = add nsw i32 %b12, %i13
-  store i32 %10, ptr %b, align 4
-  %b14 = load i32, ptr %b, align 4
-  br label %for.then
 }

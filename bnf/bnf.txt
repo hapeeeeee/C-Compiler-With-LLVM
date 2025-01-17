@@ -17,7 +17,8 @@ bitor-expr      : bitxor-expr ("|" bitxor-expr)*
 bitxor-expr     : bitand-expr ("^" bitand-expr)*
 bitand-expr     : equal-expr ("&" equal-expr)*
 equal-expr      : relational-expr ( ("==" | "!=") relational-expr)*
-relational-expr : add-expr (( ">" |"<" | "<=" | ">=") add-expr)*
+relational-expr : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
+shift-expr      : add-expr ( ("<<" | ">>") add-expr )*
 add-expr        : mult-expr ( ("+" | "_") mult-expr)*
 mult-expr       : primary-expr ( ("*" | "/" | "%") primary-expr)*
 primary-expr    : identifier | number | "(" expr ")"

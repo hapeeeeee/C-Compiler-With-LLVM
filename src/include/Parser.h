@@ -10,8 +10,8 @@
 /// @details The current grammar rules are as follows:
 /// +-----------------------------------------------------------------------------------+
 /// | prog            : stmt*
-/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt |
-/// |                 : for-stmt | break-stmt | continue-stmt
+/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt |
+/// |                   break-stmt | continue-stmt
 /// | null-stmt       : ";"
 /// | decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
 /// | expr-stmt       : expr ";"
@@ -21,12 +21,18 @@
 /// | break-stmt      : "break" ";"
 /// | continue-stmt   : "continue" ";"
 /// | block-stmt      : "{" stmt* "}"
-/// | expr            : assign-expr | equal-expr
+/// | expr            : assign-expr | logicor-expr
 /// | assign-expr     : identifier ("=" expr)+
+/// | logicor-expr    : logicand-expr ("||" logicand-expr)*
+/// | logicand-expr   : bitor-expr ("&&" bitor-expr)*
+/// | bitor-expr      : bitxor-expr ("|" bitxor-expr)*
+/// | bitxor-expr     : bitand-expr ("^" bitand-expr)*
+/// | bitand-expr     : equal-expr ("&" equal-expr)*
 /// | equal-expr      : relational-expr ( ("==" | "!=") relational-expr)*
-/// | relational-expr : add-expr (( ">" |"<" | "<=" | ">=") add-expr)*
+/// | relational-expr : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
+/// | shift-expr      : add-expr ( ("<<" | ">>") add-expr )*
 /// | add-expr        : mult-expr ( ("+" | "_") mult-expr)*
-/// | mult-expr       : primary-expr ( ("*" | "/") primary-expr)*
+/// | mult-expr       : primary-expr ( ("*" | "/" | "%") primary-expr)*
 /// | primary-expr    : identifier | number | "(" expr ")"
 /// | number          : ([0-9])+
 /// | identifier      : (a-zA-Z)(a-zA-Z0-9)*
@@ -58,8 +64,14 @@ class Parser {
     std::shared_ptr<ASTNode> ParserContinueStmt();
     std::shared_ptr<ASTNode> ParserExpr();
     std::shared_ptr<ASTNode> ParserAssignExpr();
+    std::shared_ptr<ASTNode> ParserLogicOrExpr();
+    std::shared_ptr<ASTNode> ParserLogicAndExpr();
+    std::shared_ptr<ASTNode> ParserBitOrExpr();
+    std::shared_ptr<ASTNode> ParserBitXorExpr();
+    std::shared_ptr<ASTNode> ParserBitAndExpr();
     std::shared_ptr<ASTNode> ParserEqualExpr();
     std::shared_ptr<ASTNode> ParserRelationalExpr();
+    std::shared_ptr<ASTNode> ParserShiftExpr();
     std::shared_ptr<ASTNode> ParserAddExpr();
     std::shared_ptr<ASTNode> ParserMultExpr();
     std::shared_ptr<ASTNode> ParserPrimaryExpr();

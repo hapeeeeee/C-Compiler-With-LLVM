@@ -153,14 +153,15 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         //   trueBB   nextBB(calc rightExpr)
         //      \     /
         //      mergeBB
-        auto trueBB  = llvm::BasicBlock::Create(llvmContext, "trueBB", currFunc);
+        auto trueBB  = llvm::BasicBlock::Create(llvmContext, "trueBB");
         auto nextBB  = llvm::BasicBlock::Create(llvmContext, "nextBB", currFunc);
-        auto mergeBB = llvm::BasicBlock::Create(llvmContext, "mergeBB", currFunc);
+        auto mergeBB = llvm::BasicBlock::Create(llvmContext, "mergeBB");
 
         llvm::Value *left = binaryExpr->leftExpr->AcceptVisitor(this);
         val               = irBuilder.CreateICmpNE(left, irBuilder.getInt32(0));
         irBuilder.CreateCondBr(val, trueBB, nextBB);
 
+        trueBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(trueBB);
         irBuilder.CreateBr(mergeBB);
 
@@ -175,6 +176,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         right              = irBuilder.CreateZExt(right, irBuilder.getInt32Ty());
         irBuilder.CreateBr(mergeBB);
 
+        mergeBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(mergeBB);
         llvm::PHINode *phi = irBuilder.CreatePHI(irBuilder.getInt32Ty(), 2);
         phi->addIncoming(irBuilder.getInt32(1), trueBB);
@@ -189,9 +191,9 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         //   falseBB   nextBB(calc rightExpr)
         //      \     /
         //      mergeBB
-        auto falseBB = llvm::BasicBlock::Create(llvmContext, "falseBB", currFunc);
+        auto falseBB = llvm::BasicBlock::Create(llvmContext, "falseBB");
         auto nextBB  = llvm::BasicBlock::Create(llvmContext, "nextBB", currFunc);
-        auto mergeBB = llvm::BasicBlock::Create(llvmContext, "mergeBB", currFunc);
+        auto mergeBB = llvm::BasicBlock::Create(llvmContext, "mergeBB");
 
         llvm::Value *left = binaryExpr->leftExpr->AcceptVisitor(this);
         val               = irBuilder.CreateICmpNE(left, irBuilder.getInt32(0));
@@ -207,9 +209,11 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         val                = irBuilder.CreateICmpNE(left, irBuilder.getInt32(0));
         irBuilder.CreateBr(mergeBB);
 
+        falseBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(falseBB);
         irBuilder.CreateBr(mergeBB);
 
+        mergeBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(mergeBB);
         llvm::PHINode *phi = irBuilder.CreatePHI(irBuilder.getInt32Ty(), 2);
         phi->addIncoming(irBuilder.getInt32(0), falseBB);

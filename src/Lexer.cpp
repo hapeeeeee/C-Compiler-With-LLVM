@@ -38,6 +38,34 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "/";
     case TokenType::Percent:
         return "%";
+    case TokenType::Question:
+        return "?";
+    case TokenType::Colon:
+        return ":";
+    case TokenType::PlusPlus:
+        return "++";
+    case TokenType::PlusEqual:
+        return "+=";
+    case TokenType::MinusMinus:
+        return "--";
+    case TokenType::MinusEqual:
+        return "-=";
+    case TokenType::StarEqual:
+        return "*=";
+    case TokenType::SlashEqual:
+        return "/=";
+    case TokenType::PercentEqual:
+        return "%=";
+    case TokenType::LessLessEqual:
+        return "<<=";
+    case TokenType::GreaterGreaterEqual:
+        return ">>=";
+    case TokenType::AmpEqual:
+        return "&=";
+    case TokenType::PipeEqual:
+        return "|=";
+    case TokenType::CaretEqual:
+        return "^=";
     case TokenType::LessLess:
         return "<<";
     case TokenType::GreaterGreater:
@@ -60,6 +88,8 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "int";
     case TokenType::Eof:
         return "Eof";
+    case TokenType::KW_Sizeof:
+        return "sizeof";
     default:
         llvm::llvm_unreachable_internal();
         break;
@@ -129,14 +159,29 @@ void Lexer::NextToken(Token &tok) {
         KeyWordHandle(tok);
     } else {
         switch (*workPtr) {
+        case '?': {
+            tok.setMember(TokenType::Question, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case '~': {
+            tok.setMember(TokenType::Tilde, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case ':': {
+            tok.setMember(TokenType::Colon, workPtr, 1);
+            workPtr++;
+            break;
+        }
         case '!': {
             const char *workNextPtr = workPtr + 1;
             if (*workNextPtr == '=') {
                 tok.setMember(TokenType::NotEqual, workPtr, 2);
                 workPtr += 2;
             } else {
-                diager.Report(
-                    llvm::SMLoc::getFromPointer(workPtr), diag::error_unknown_char, workPtr);
+                tok.setMember(TokenType::Exclaim, workPtr, 1);
+                workPtr++;
             }
             break;
         }
@@ -157,7 +202,13 @@ void Lexer::NextToken(Token &tok) {
                 tok.setMember(TokenType::LessEqual, workPtr, 2);
                 workPtr++;
             } else if (*workNextPtr == '<') {
-                tok.setMember(TokenType::LessLess, workPtr, 2);
+                const char *workNextNextPtr = workNextPtr + 1;
+                if (*workNextNextPtr == '=') {
+                    tok.setMember(TokenType::LessLessEqual, workPtr, 3);
+                    workPtr++;
+                } else {
+                    tok.setMember(TokenType::LessLess, workPtr, 2);
+                }
                 workPtr++;
             } else {
                 tok.setMember(TokenType::Less, workPtr, 1);
@@ -167,11 +218,18 @@ void Lexer::NextToken(Token &tok) {
         }
         case '>': {
             const char *workNextPtr = workPtr + 1;
-            if (workNextPtr && *workNextPtr == '=') {
+            if (*workNextPtr == '=') {
                 tok.setMember(TokenType::GreaterEqual, workPtr, 2);
                 workPtr++;
             } else if (*workNextPtr == '>') {
-                tok.setMember(TokenType::GreaterGreater, workPtr, 2);
+                const char *workNextNextPtr = workNextPtr + 1;
+                if (*workNextNextPtr == '=') {
+                    tok.setMember(TokenType::GreaterGreaterEqual, workPtr, 3);
+                    workPtr++;
+                } else {
+                    tok.setMember(TokenType::GreaterGreater, workPtr, 2);
+                }
+
                 workPtr++;
             } else {
                 tok.setMember(TokenType::Greater, workPtr, 1);
@@ -184,6 +242,9 @@ void Lexer::NextToken(Token &tok) {
             if (*workNextPtr == '|') {
                 tok.setMember(TokenType::PipePipe, workPtr, 2);
                 workPtr++;
+            } else if (*workNextPtr == '=') {
+                tok.setMember(TokenType::PipeEqual, workPtr, 2);
+                workPtr++;
             } else {
                 tok.setMember(TokenType::Pipe, workPtr, 1);
             }
@@ -195,6 +256,9 @@ void Lexer::NextToken(Token &tok) {
             if (*workNextPtr == '&') {
                 tok.setMember(TokenType::AmpAmp, workPtr, 2);
                 workPtr++;
+            } else if (*workNextPtr == '=') {
+                tok.setMember(TokenType::AmpEqual, workPtr, 2);
+                workPtr++;
             } else {
                 tok.setMember(TokenType::Amp, workPtr, 1);
             }
@@ -202,32 +266,72 @@ void Lexer::NextToken(Token &tok) {
             break;
         }
         case '^': {
-            tok.setMember(TokenType::Caret, workPtr, 1);
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::CaretEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Caret, workPtr, 1);
+            }
             workPtr++;
             break;
         }
         case '+': {
-            tok.setMember(TokenType::Plus, workPtr, 1);
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::PlusEqual, workPtr, 2);
+                workPtr++;
+            } else if (*workNextPtr == '+') {
+                tok.setMember(TokenType::PlusPlus, workPtr, 2);
+                workPtr++;
+            }
             workPtr++;
             break;
         }
         case '-': {
-            tok.setMember(TokenType::Minus, workPtr, 1);
-            workPtr++;
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::MinusEqual, workPtr, 2);
+                workPtr += 2;
+            } else if (*workNextPtr == '-') {
+                tok.setMember(TokenType::MinusMinus, workPtr, 2);
+                workPtr += 2;
+            } else {
+                tok.setMember(TokenType::Minus, workPtr, 1);
+                workPtr++;
+            }
             break;
         }
         case '*': {
-            tok.setMember(TokenType::Star, workPtr, 1);
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::StarEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Star, workPtr, 1);
+            }
             workPtr++;
             break;
         }
         case '/': {
-            tok.setMember(TokenType::Slash, workPtr, 1);
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::SlashEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Slash, workPtr, 1);
+            }
             workPtr++;
             break;
         }
         case '%': {
-            tok.setMember(TokenType::Percent, workPtr, 1);
+            const char *workNextPtr = workPtr + 1;
+            if (*workNextPtr == '=') {
+                tok.setMember(TokenType::PercentEqual, workPtr, 2);
+                workPtr++;
+            } else {
+                tok.setMember(TokenType::Percent, workPtr, 1);
+            }
             workPtr++;
             break;
         }
@@ -307,6 +411,8 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_break;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "continue") {
         tok.tokenTy = TokenType::KW_continue;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "sizeof") {
+        tok.tokenTy = TokenType::KW_Sizeof;
     }
 }
 

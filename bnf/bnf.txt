@@ -1,26 +1,37 @@
-prog            : stmt*
-stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt | break-stmt | continue-stmt
-null-stmt       : ";"
-decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
-expr-stmt       : expr ";"
-if-stmt         : "if" "(" expr ")" stmt  ("else" stmt )?
-for-stmt        : "for" "(" expr?       ; expr? ";" expr? ")"  stmt  
-                : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt  
-break-stmt      : "break" ";"
-continue-stmt   : "continue" ";"
-block-stmt      : "{" stmt* "}"
-expr            : assign-expr | logicor-expr
-assign-expr     : identifier ("=" expr)+     
-logicor-expr    : logicand-expr ("||" logicand-expr)*
-logicand-expr   : bitor-expr ("&&" bitor-expr)*
-bitor-expr      : bitxor-expr ("|" bitxor-expr)*
-bitxor-expr     : bitand-expr ("^" bitand-expr)*
-bitand-expr     : equal-expr ("&" equal-expr)*
-equal-expr      : relational-expr ( ("==" | "!=") relational-expr)*
-relational-expr : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
-shift-expr      : add-expr ( ("<<" | ">>") add-expr )*
-add-expr        : mult-expr ( ("+" | "_") mult-expr)*
-mult-expr       : primary-expr ( ("*" | "/" | "%") primary-expr)*
-primary-expr    : identifier | number | "(" expr ")"
-number          : ([0-9])+
-identifier      : (a-zA-Z)(a-zA-Z0-9)*
+prog                : stmt-list
+stmt-list           : stmt*
+stmt                : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt | break-stmt | continue-stmt
+null-stmt           : ";"
+decl-stmt           : decl-spec init-declarator-list? ";"
+decl-spec           : "int"
+init-declarator-list: declarator ("=" expr)? ("," declarator ("=" expr)?)*  
+declarator          : "*"* direct-declarator
+direct-declarator   : identifier()
+
+expr-stmt           : expr ";"
+if-stmt             : "if" "(" expr ")" stmt  ("else" stmt )?
+for-stmt            : "for" "(" expr?       ; expr? ";" expr? ")"  stmt  
+                    : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt  
+break-stmt          : "break" ";"
+continue-stmt       : "continue" ";"
+block-stmt          : "{" stmt* "}"
+
+expr                : assign-expr | logicor-expr
+assign-expr         : conditional ("=" | "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=" assign-expr)+     
+conditional         : logicor-expr ("?" expr ":" conditional)?
+logicor-expr        : logicand-expr ("||" logicand-expr)*
+logicand-expr       : bitor-expr ("&&" bitor-expr)*
+bitor-expr          : bitxor-expr ("|" bitxor-expr)*
+bitxor-expr         : bitand-expr ("^" bitand-expr)*
+bitand-expr         : equal-expr ("&" equal-expr)*
+equal-expr          : relational-expr ( ("==" | "!=") relational-expr)*
+relational-expr     : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
+shift-expr          : add-expr ( ("<<" | ">>") add-expr )*
+add-expr            : mult-expr ( ("+" | "-") mult-expr)*
+mult-expr           : primary-expr ( ("*" | "/" | "%") primary-expr)*
+cast                : unary | "(" type-name ")" cast
+unary               : postfix | ("++"|"--"|"&"|"*"|"-"|"~"|"!"|"sizeof") unary | "sizeof" "(" type-name ")"
+postfix             : primary-expr ("++" | "--")*
+primary-expr        : identifier | number | "(" expr ")"
+number              : ([0-9])+
+identifier          : (a-zA-Z)(a-zA-Z0-9)*

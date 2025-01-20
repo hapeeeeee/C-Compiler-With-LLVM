@@ -165,7 +165,12 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         irBuilder.CreateBr(mergeBB);
 
         irBuilder.SetInsertPoint(nextBB);
+        // Note: The right-hand side block code generation here might create new basic blocks. After
+        // the generation is complete, the insertPoint might no longer be at nextBB, so the
+        // subsequent phi->addIncoming(right, nextBB); might not be able to reach nextBB, leading to
+        // a bug.
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
+        nextBB             = irBuilder.GetInsertBlock();
         right              = irBuilder.CreateICmpNE(right, irBuilder.getInt32(0));
         right              = irBuilder.CreateZExt(right, irBuilder.getInt32Ty());
         irBuilder.CreateBr(mergeBB);
@@ -193,7 +198,12 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         irBuilder.CreateCondBr(val, nextBB, falseBB);
 
         irBuilder.SetInsertPoint(nextBB);
+        // Note: The right-hand side block code generation here might create new basic blocks. After
+        // the generation is complete, the insertPoint might no longer be at nextBB, so the
+        // subsequent phi->addIncoming(right, nextBB); might not be able to reach nextBB, leading to
+        // a bug.
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
+        nextBB             = irBuilder.GetInsertBlock();
         val                = irBuilder.CreateICmpNE(left, irBuilder.getInt32(0));
         irBuilder.CreateBr(mergeBB);
 

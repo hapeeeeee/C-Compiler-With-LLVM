@@ -7,10 +7,11 @@ PrintVisitor::PrintVisitor(std::shared_ptr<Program> program) {
 
 llvm::Value *PrintVisitor::VisitProgram(Program *program) {
     llvm::outs() << "Program :\n--------------------\n\n";
-    for (std::shared_ptr<ASTNode> &stmt : program->stmts) {
-        stmt->AcceptVisitor(this);
-        llvm::outs() << "\n";
-    }
+    // for (std::shared_ptr<ASTNode> &stmt : program->stmts) {
+    //     stmt->AcceptVisitor(this);
+    //     llvm::outs() << "\n";
+    // }
+    program->node->AcceptVisitor(this);
     llvm::outs() << "\n-----------------------------\n";
     return nullptr;
 }
@@ -24,10 +25,15 @@ llvm::Value *PrintVisitor::VisitDeclStmts(DeclStmts *declStmts) {
 }
 
 llvm::Value *PrintVisitor::VisitVariableDecl(VariableDecl *variableDecl) {
-    if (variableDecl->cType == CType::getIntTy()) {
-        llvm::outs() << "int "
-                     << llvm::StringRef(variableDecl->token.ptr, variableDecl->token.length) << ";";
+    if (variableDecl->cType == CType::IntType) {
+        llvm::outs() << "int " << llvm::StringRef(variableDecl->token.ptr, variableDecl->token.length) << " ";
     }
+
+    if (variableDecl->initNode) {
+        llvm::outs() << "= ";
+        variableDecl->initNode->AcceptVisitor(this);
+    }
+    llvm::outs() << ";\n";
     return nullptr;
 }
 
@@ -158,8 +164,7 @@ llvm::Value *PrintVisitor::VisitNumberExpr(NumberExpr *numberExpr) {
 }
 
 llvm::Value *PrintVisitor::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
-    llvm::outs() << llvm::StringRef(variableAssessExpr->token.ptr,
-                                    variableAssessExpr->token.length);
+    llvm::outs() << llvm::StringRef(variableAssessExpr->token.ptr, variableAssessExpr->token.length);
     return nullptr;
 }
 

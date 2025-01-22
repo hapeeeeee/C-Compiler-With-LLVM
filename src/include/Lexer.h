@@ -70,11 +70,11 @@ class Token {
   public:
     TokenType tokenTy;
     int row;
-    int col;         ///< The line and column number of the token in the source code.
-    int value;       ///< The value of the token, used when the TokenType is 'number'.
-    CType *cType;    ///< Build-in Type for token (int | )
-    const char *ptr; ///< Diag info pointer
-    int length;      ///< Length of token
+    int col;                      ///< The line and column number of the token in the source code.
+    int value;                    ///< The value of the token, used when the TokenType is 'number'.
+    std::shared_ptr<CType> cType; ///< Build-in Type for token (int | )
+    const char *ptr;              ///< Diag info pointer
+    int length;                   ///< Length of token
 
   public:
     Token() {
@@ -89,7 +89,11 @@ class Token {
 
     static llvm::StringRef GetSpellingText(TokenType ty);
 
-    void setMember(TokenType tokTy, const char *pos, int len, int val = 0, CType *cTy = nullptr) {
+    void setMember(TokenType tokTy,
+                   const char *pos,
+                   int len,
+                   int val                    = 0,
+                   std::shared_ptr<CType> cTy = nullptr) {
         tokenTy = tokTy;
         value   = val;
         cType   = cTy;

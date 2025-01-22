@@ -49,10 +49,9 @@ class Visitor {
 
 class Program {
   public:
-    std::vector<std::shared_ptr<ASTNode>> stmts;
+    std::shared_ptr<ASTNode> node;
 
   public:
-    Program(std::vector<std::shared_ptr<ASTNode>> stmts);
     llvm::Value *AcceptVisitor(Visitor *v) {
         return v->VisitProgram(this);
     }
@@ -75,7 +74,7 @@ class ASTNode {
     };
 
   public:
-    CType *cType;
+    std::shared_ptr<CType> cType;
     Nodekind nodeKind;
     Token token;
 
@@ -107,6 +106,9 @@ class DeclStmts : public ASTNode {
 };
 
 class VariableDecl : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> initNode;
+
   public:
     VariableDecl() : ASTNode(Nodekind::ND_VariableDecl) {
     }

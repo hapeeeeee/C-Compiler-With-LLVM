@@ -14,5 +14,5 @@ DIAG(error_continue_not_in_loop, Error, "'continue' not in loop stmt")
 DIAG(error_redefined, Error, "redefined symbol '{0}'")
 DIAG(error_undefined, Error, "undefined symbol '{0}'")
 DIAG(error_lvalue, Error, "Required lvalue on the assign operation left side")
-
+DIAG(unexpect_typename, Error, "Unexcept type name '{0}'")
 #undef DIAG

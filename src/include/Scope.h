@@ -15,10 +15,10 @@ enum class SymbolKind {
 /// or other named entities. Each symbol is associated with a name, a kind, and a type.
 class Symbol {
   public:
-    Symbol(llvm::StringRef name, SymbolKind symbolKind, CType *cType)
+    Symbol(llvm::StringRef name, SymbolKind symbolKind, std::shared_ptr<CType> cType)
         : name(name), symbolKind(symbolKind), cType(cType) {
     }
-    CType *cType;
+    std::shared_ptr<CType> cType;
 
   private:
     llvm::StringRef name;
@@ -37,7 +37,7 @@ class Scope {
     Scope();
     void EnterScope();
     void ExitScope();
-    void AddSymbol(llvm::StringRef name, SymbolKind symbolKind, CType *cType);
+    void AddSymbol(llvm::StringRef name, SymbolKind symbolKind, std::shared_ptr<CType> cType);
     std::shared_ptr<Symbol> FindVarSymbol(llvm::StringRef name);
     std::shared_ptr<Symbol> FindVarSymbolInCurrEnv(llvm::StringRef name);
 

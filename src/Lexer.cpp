@@ -149,8 +149,7 @@ void Lexer::NextToken(Token &tok) {
             number = number * 10 + (*workPtr - '0');
             workPtr++;
         }
-        tok.setMember(
-            TokenType::Number, tokenStart, workPtr - tokenStart, number, CType::getIntTy());
+        tok.setMember(TokenType::Number, tokenStart, workPtr - tokenStart, number, CType::IntType);
     } else if (IsLetter(*workPtr)) {
         while (IsLetter(*workPtr) || IsDigit(*workPtr)) {
             workPtr++;
@@ -284,6 +283,8 @@ void Lexer::NextToken(Token &tok) {
             } else if (*workNextPtr == '+') {
                 tok.setMember(TokenType::PlusPlus, workPtr, 2);
                 workPtr++;
+            } else {
+                tok.setMember(TokenType::Plus, workPtr, 1);
             }
             workPtr++;
             break;

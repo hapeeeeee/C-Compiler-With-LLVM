@@ -22,7 +22,7 @@ std::shared_ptr<ASTNode> Sema::SemaForStmtNode(std::shared_ptr<ASTNode> initNode
     return for_stmt;
 }
 
-std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(CType *cType, Token &tok) {
+std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok) {
     llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
     // Check is redefined for symbol
     std::shared_ptr<Symbol> symbol = scope.FindVarSymbolInCurrEnv(content);
@@ -66,7 +66,7 @@ Sema::SemaBinaryExprNode(std::shared_ptr<ASTNode> left, OpCode op, std::shared_p
     return std::make_shared<BinaryExpr>(left, op, right);
 }
 
-std::shared_ptr<ASTNode> Sema::SemaNumberExprNode(CType *cType, Token &tok) {
+std::shared_ptr<ASTNode> Sema::SemaNumberExprNode(std::shared_ptr<CType> cType, Token &tok) {
     auto expr   = std::make_shared<NumberExpr>();
     expr->token = tok;
     expr->cType = cType;

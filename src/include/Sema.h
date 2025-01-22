@@ -28,7 +28,7 @@ class Sema {
 
     Sema(Diagnostics &diager) : diager(diager) {
     }
-    std::shared_ptr<ASTNode> SemaVariableDeclNode(CType *cType, Token &tok);
+    std::shared_ptr<ASTNode> SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok);
 
     std::shared_ptr<ASTNode>
     SemaAssignExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right, Token tok);
@@ -38,7 +38,7 @@ class Sema {
     std::shared_ptr<ASTNode>
     SemaBinaryExprNode(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right);
 
-    std::shared_ptr<ASTNode> SemaNumberExprNode(CType *cType, Token &tok);
+    std::shared_ptr<ASTNode> SemaNumberExprNode(std::shared_ptr<CType> cType, Token &tok);
 
     void EnterScope();
     void ExitScope();

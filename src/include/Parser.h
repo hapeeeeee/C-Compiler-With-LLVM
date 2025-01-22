@@ -9,33 +9,42 @@
 /// @brief Syntax analyzer that uses recursive descent to parse input tokens into C language syntax
 /// @details The current grammar rules are as follows:
 /// +-----------------------------------------------------------------------------------+
-/// | prog            : stmt*
-/// | stmt            : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt |
-/// |                   break-stmt | continue-stmt
-/// | null-stmt       : ";"
-/// | decl-stmt       : "int" identifier ("=" expr)? ("," identifier ("=" expr)?)* ";"
-/// | expr-stmt       : expr ";"
-/// | if-stmt         : "if" "(" expr ")" stmt  ("else" stmt )?
-/// | for-stmt        : "for" "(" expr?       ; expr? ";" expr? ")"  stmt
-/// |                 : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt
-/// | break-stmt      : "break" ";"
-/// | continue-stmt   : "continue" ";"
-/// | block-stmt      : "{" stmt* "}"
-/// | expr            : assign-expr | logicor-expr
-/// | assign-expr     : identifier ("=" expr)+
-/// | logicor-expr    : logicand-expr ("||" logicand-expr)*
-/// | logicand-expr   : bitor-expr ("&&" bitor-expr)*
-/// | bitor-expr      : bitxor-expr ("|" bitxor-expr)*
-/// | bitxor-expr     : bitand-expr ("^" bitand-expr)*
-/// | bitand-expr     : equal-expr ("&" equal-expr)*
-/// | equal-expr      : relational-expr ( ("==" | "!=") relational-expr)*
-/// | relational-expr : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
-/// | shift-expr      : add-expr ( ("<<" | ">>") add-expr )*
-/// | add-expr        : mult-expr ( ("+" | "_") mult-expr)*
-/// | mult-expr       : primary-expr ( ("*" | "/" | "%") primary-expr)*
-/// | primary-expr    : identifier | number | "(" expr ")"
-/// | number          : ([0-9])+
-/// | identifier      : (a-zA-Z)(a-zA-Z0-9)*
+/// | prog                : block-stmt
+/// | block-stmt          : "{" stmt* "}"
+/// | stmt                : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt | break-stmt | continue-stmt
+/// | null-stmt           : ";"
+/// | decl-stmt           : decl-spec init-declarator-list? ";"
+/// | decl-spec           : "int"
+/// | init-declarator-list: declarator ("=" expr)? ("," declarator ("=" expr)?)*
+/// | declarator          : "*"* direct-declarator
+/// | direct-declarator   : identifier()
+/// |
+/// | expr-stmt           : expr ";"
+/// | if-stmt             : "if" "(" expr ")" stmt  ("else" stmt )?
+/// | for-stmt            : "for" "(" expr?       ; expr? ";" expr? ")"  stmt
+/// |                     : "for" "(" decl-stmt?  ; expr? ";" expr? ")"  stmt
+/// | break-stmt          : "break" ";"
+/// | continue-stmt       : "continue" ";"
+/// |
+/// | expr                : assign-expr | logicor-expr
+/// | assign-expr         : conditional ("=" | "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=" assign-expr)+
+/// | conditional         : logicor-expr ("?" expr ":" conditional)?
+/// | logicor-expr        : logicand-expr ("||" logicand-expr)*
+/// | logicand-expr       : bitor-expr ("&&" bitor-expr)*
+/// | bitor-expr          : bitxor-expr ("|" bitxor-expr)*
+/// | bitxor-expr         : bitand-expr ("^" bitand-expr)*
+/// | bitand-expr         : equal-expr ("&" equal-expr)*
+/// | equal-expr          : relational-expr ( ("==" | "!=") relational-expr)*
+/// | relational-expr     : shift-expr (( ">" |"<" | "<=" | ">=") shift-expr)*
+/// | shift-expr          : add-expr ( ("<<" | ">>") add-expr )*
+/// | add-expr            : mult-expr ( ("+" | "-") mult-expr)*
+/// | mult-expr           : primary-expr ( ("*" | "/" | "%") primary-expr)*
+/// | cast                : unary | "(" type-name ")" cast
+/// | unary               : postfix | ("++"|"--"|"&"|"*"|"-"|"~"|"!"|"sizeof") unary | "sizeof" "(" type-name ")"
+/// | postfix             : primary-expr ("++" | "--")*
+/// | primary-expr        : identifier | number | "(" expr ")"
+/// | number              : ([0-9])+
+/// | identifier          : (a-zA-Z)(a-zA-Z0-9)*
 /// +----------------------------------------------------------------------------------+
 /// The grammar rules can also be referenced in bnf/bnf.txt
 class Parser {
@@ -46,24 +55,35 @@ class Parser {
   private:
     Lexer &lexer;
     Sema &sema;
-    Token token; ///< The current token
-    std::vector<std::shared_ptr<ASTNode>>
-        nodesContainBreak; ///< AST nodes for loop statements containing
-                           ///< break statements and switch statements
-    std::vector<std::shared_ptr<ASTNode>>
-        nodesContainContinue; ///< AST nodes for loop statements containing continue statements
+    Token token;                                                ///< The current token
+    std::vector<std::shared_ptr<ASTNode>> nodesContainBreak;    ///< AST nodes for loop statements containing
+                                                                ///< break statements and switch statements
+    std::vector<std::shared_ptr<ASTNode>> nodesContainContinue; ///< AST nodes for loop statements containing continue statements
 
   private:
     std::shared_ptr<ASTNode> ParserStmt();
+
+    // decl-stmt           : decl-spec init-declarator-list? ";"
+    // decl-spec           : "int"
+    // init-declarator-list: declarator ("=" expr)? ("," declarator ("=" expr)?)*
+    // declarator          : "*"* direct-declarator
+    // Parse `decl-stmt`
     std::shared_ptr<ASTNode> ParserDeclStmt();
+    // Parse `decl-spec`
+    std::shared_ptr<CType> ParserDeclSpec();
+    // Parse `declarator ("=" expr)?`
+    std::shared_ptr<ASTNode> ParserDeclarator(std::shared_ptr<CType> baseType);
+
     std::shared_ptr<ASTNode> ParserBlockStmt();
     std::shared_ptr<ASTNode> ParserExprStmt();
     std::shared_ptr<ASTNode> ParserIfStmt();
     std::shared_ptr<ASTNode> ParserForStmt();
     std::shared_ptr<ASTNode> ParserBreakStmt();
     std::shared_ptr<ASTNode> ParserContinueStmt();
+
     std::shared_ptr<ASTNode> ParserExpr();
     std::shared_ptr<ASTNode> ParserAssignExpr();
+    std::shared_ptr<ASTNode> ParserConditionalExpr();
     std::shared_ptr<ASTNode> ParserLogicOrExpr();
     std::shared_ptr<ASTNode> ParserLogicAndExpr();
     std::shared_ptr<ASTNode> ParserBitOrExpr();
@@ -74,6 +94,8 @@ class Parser {
     std::shared_ptr<ASTNode> ParserShiftExpr();
     std::shared_ptr<ASTNode> ParserAddExpr();
     std::shared_ptr<ASTNode> ParserMultExpr();
+    std::shared_ptr<ASTNode> ParserUnaryExpr();
+    std::shared_ptr<ASTNode> ParserPostfixExpr();
     std::shared_ptr<ASTNode> ParserPrimaryExpr();
 
   private:

@@ -9,27 +9,25 @@ CodeGen::CodeGen(std::shared_ptr<Program> program) {
 }
 
 llvm::Value *CodeGen::VisitProgram(Program *program) {
-    FunctionType *printfFuncTy = FunctionType::get(
-        irBuilder.getInt32Ty(), {llvm::PointerType::get(irBuilder.getInt8Ty(), 0)}, true);
-    Function *printfFunc = Function::Create(
-        printfFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "printf", llvmModule.get());
+    FunctionType *printfFuncTy =
+        FunctionType::get(irBuilder.getInt32Ty(), {llvm::PointerType::get(irBuilder.getInt8Ty(), 0)}, true);
+    Function *printfFunc = Function::Create(printfFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "printf", llvmModule.get());
 
     FunctionType *mainFuncTy = FunctionType::get(irBuilder.getInt32Ty(), false);
-    Function *mainFunc       = Function::Create(
-        mainFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "main", llvmModule.get());
-    BasicBlock *entryBB = BasicBlock::Create(llvmContext, "entry", mainFunc);
+    Function *mainFunc       = Function::Create(mainFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "main", llvmModule.get());
+    BasicBlock *entryBB      = BasicBlock::Create(llvmContext, "entry", mainFunc);
     irBuilder.SetInsertPoint(entryBB);
     currFunc = mainFunc;
 
     llvm::Value *lastVal;
-    for (std::shared_ptr<ASTNode> &stmt : program->stmts) {
-        lastVal = stmt->AcceptVisitor(this);
-    }
+    // for (std::shared_ptr<ASTNode> &stmt : program->stmts) {
+    //     lastVal = stmt->AcceptVisitor(this);
+    // }
+    lastVal = program->node->AcceptVisitor(this);
     if (lastVal) {
         irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("lastVal: %d\n"), lastVal});
     } else {
-        irBuilder.CreateCall(printfFunc,
-                             {irBuilder.CreateGlobalString("last inst is not expr.\n")});
+        irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("last inst is not expr.\n")});
     }
 
     irBuilder.CreateRet(irBuilder.getInt32(0));
@@ -235,7 +233,7 @@ llvm::Value *CodeGen::VisitNumberExpr(NumberExpr *numberExpr) {
 
 llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
     llvm::Type *ty = nullptr;
-    if (variableDecl->cType == CType::getIntTy()) {
+    if (variableDecl->cType == CType::IntType) {
         ty = irBuilder.getInt32Ty();
     }
 
@@ -332,8 +330,7 @@ llvm::Value *CodeGen::VisitContinueStmt(ContinueStmt *continueStmt) {
     llvm::BasicBlock *targetBB = continueTargetBBs[continueStmt->fatherNode.get()];
     irBuilder.CreateBr(targetBB);
 
-    llvm::BasicBlock *deathBB =
-        llvm::BasicBlock::Create(llvmContext, "for.continue.death", currFunc);
+    llvm::BasicBlock *deathBB = llvm::BasicBlock::Create(llvmContext, "for.continue.death", currFunc);
     irBuilder.SetInsertPoint(deathBB);
     return nullptr;
 }

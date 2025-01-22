@@ -13,7 +13,7 @@ void Scope::ExitScope() {
     envs.pop_back();
 }
 
-void Scope::AddSymbol(llvm::StringRef name, SymbolKind symbolKind, CType *cType) {
+void Scope::AddSymbol(llvm::StringRef name, SymbolKind symbolKind, std::shared_ptr<CType> cType) {
     auto symbol = std::make_shared<Symbol>(name, symbolKind, cType);
     envs.back()->variableSymbolTable.insert({name, symbol});
 }

@@ -15,9 +15,8 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    const char *file_name = argv[1];
-    static llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buf =
-        llvm::MemoryBuffer::getFile(file_name);
+    const char *file_name                                         = argv[1];
+    static llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buf = llvm::MemoryBuffer::getFile(file_name);
 
     if (!buf) {
         llvm::errs() << "can't open file: " << file_name << "\n";
@@ -31,11 +30,11 @@ int main(int argc, char *argv[]) {
     // std::unique_ptr<llvm::MemoryBuffer> memBuf = std::move(*buf);
     Lexer lex(mgr, diag);
     Token tok;
-    lex.Run(tok);
-    // Sema sema(diag);
-    // Parser parser(lex, sema);
-    // std::shared_ptr<Program> program = parser.ParserProgram();
-    // // PrintVisitor printVisitor(program);
+    // lex.Run(tok);
+    Sema sema(diag);
+    Parser parser(lex, sema);
+    std::shared_ptr<Program> program = parser.ParserProgram();
+    PrintVisitor printVisitor(program);
     // CodeGen codeGen(program);
 
     return 0;

@@ -12,7 +12,10 @@
 class Program;
 class ASTNode;
 class VariableDecl;
+class SizeofExpr;
+class UnaryExpr;
 class BinaryExpr;
+class ThreeExpr;
 class NumberExpr;
 class VariableAssessExpr;
 class AssignExpr;
@@ -41,7 +44,10 @@ class Visitor {
     virtual llvm::Value *VisitForStmt(ForStmt *forStmt)                                  = 0;
     virtual llvm::Value *VisitBreakStmt(BreakStmt *breakStmt)                            = 0;
     virtual llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt)                   = 0;
+    virtual llvm::Value *VisitSizeofExpr(SizeofExpr *sizeofExpr)                         = 0;
+    virtual llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr)                            = 0;
     virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
+    virtual llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr)                            = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
     virtual llvm::Value *VisitAssignExpr(AssignExpr *assignExpr)                         = 0;
@@ -67,7 +73,10 @@ class ASTNode {
         ND_ForStmt,
         ND_BreakStmt,
         ND_ContinueStmt,
+        ND_SizeofExpr,
+        ND_UnaryExpr,
         ND_BinaryExpr,
+        ND_ThreeExpr,
         ND_NumberExpr,
         ND_VariableAssessExpr,
         ND_AssignExpr,
@@ -212,35 +221,96 @@ class ContinueStmt : public ASTNode {
     }
 };
 
-enum class OpCode {
-    Add = 0,      ///< +
-    Sub,          ///< -
-    Mul,          ///< *
-    Div,          ///< /
-    Mod,          ///< %
-    LeftShift,    ///< <<
-    RightShift,   ///< >>
-    EqualEqual,   ///< ==
-    NotEqual,     ///< !=
-    Less,         ///< <
-    Greater,      ///< >
-    LessEqual,    ///< <=
-    GreaterEqual, ///< >=
-    LogicOr,      ///< ||
-    LogicAnd,     ///< &&
-    BitOr,        ///< |
-    BitXor,       ///< ^
-    BitAnd,       ///< &
+enum class UnaryOpCode {
+    Positive = 0, ///< +a;
+    Negative,     ///< -1
+    Deref,        ///< *a
+    Addr,         ///< &a
+    Inc,          ///< a++
+    Dec,          ///< a--
+    LogicNot,     ///< !a
+    BitNot,       ///< ~a
+};
+
+class UnaryExpr : public ASTNode {
+  public:
+    UnaryOpCode op;
+    std::shared_ptr<ASTNode> expr;
+
+  public:
+    UnaryExpr(UnaryOpCode op, std::shared_ptr<ASTNode> expr) : op(op), expr(expr), ASTNode(Nodekind::ND_UnaryExpr) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitUnaryExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_UnaryExpr;
+    }
+};
+
+class SizeofExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> expr;
+    std::shared_ptr<CType> ty;
+
+  public:
+    SizeofExpr(std::shared_ptr<ASTNode> expr, std::shared_ptr<CType> ty) : expr(expr), ty(ty), ASTNode(ND_SizeofExpr) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitSizeofExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_SizeofExpr;
+    }
+};
+
+enum class BinOpCode {
+    Add = 0,          ///< +
+    Sub,              ///< -
+    Mul,              ///< *
+    Div,              ///< /
+    Mod,              ///< %
+    LeftShift,        ///< <<
+    RightShift,       ///< >>
+    EqualEqual,       ///< ==
+    NotEqual,         ///< !=
+    Less,             ///< <
+    Greater,          ///< >
+    LessEqual,        ///< <=
+    GreaterEqual,     ///< >=
+    LogicOr,          ///< ||
+    LogicAnd,         ///< &&
+    BitOr,            ///< |
+    BitXor,           ///< ^
+    BitAnd,           ///< &
+    Comma,            ///< ,
+    Assign,           ///< =
+    AddAssign,        ///< +=
+    SubAssign,        ///< -=
+    MulAssign,        ///< *=
+    DivAssign,        ///< /=
+    ModAssign,        ///< %=
+    OrAssign,         ///< |=
+    AndAssign,        ///< &=
+    XorAssign,        ///< ^=
+    LeftShiftAssign,  ///< <<=
+    RightShiftAssign, ///< >>=
+    AddAdd,           ///< ++
+    SubSub,           ///< --
 };
 
 class BinaryExpr : public ASTNode {
   public:
-    OpCode op;
+    BinOpCode op;
     std::shared_ptr<ASTNode> leftExpr;
     std::shared_ptr<ASTNode> rightExpr;
 
   public:
-    BinaryExpr(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right)
+    BinaryExpr(std::shared_ptr<ASTNode> left, BinOpCode op, std::shared_ptr<ASTNode> right)
         : leftExpr(left), op(op), rightExpr(right), ASTNode(Nodekind::ND_BinaryExpr) {
     }
 
@@ -250,6 +320,25 @@ class BinaryExpr : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_BinaryExpr;
+    }
+};
+
+class ThreeExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> condExpr;
+    std::shared_ptr<ASTNode> trueExpr;
+    std::shared_ptr<ASTNode> falseExpr;
+
+  public:
+    ThreeExpr() : ASTNode(Nodekind::ND_ThreeExpr) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitThreeExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_ThreeExpr;
     }
 };
 

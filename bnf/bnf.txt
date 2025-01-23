@@ -17,7 +17,7 @@ continue-stmt       : "continue" ";"
 
 expr                : assign-expr (, assign-expr)*
 assign-expr         : conditional-expr ("=" | "+=" | "-=" | "*=" | "/=" | "%=" | "|=" | "&=" | "^=" | "<<=" | ">>=" assign-expr)+     
-conditional-expr    : logicor-expr ("?" expr ":" conditional)?
+conditional-expr    : logicor-expr ("?" expr ":" conditional-expr)?
 logicor-expr        : logicand-expr ("||" logicand-expr)*
 logicand-expr       : bitor-expr ("&&" bitor-expr)*
 bitor-expr          : bitxor-expr ("|" bitxor-expr)*

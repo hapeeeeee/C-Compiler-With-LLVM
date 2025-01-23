@@ -95,58 +95,58 @@ llvm::Value *PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     binaryExpr->leftExpr->AcceptVisitor(this);
 
     switch (binaryExpr->op) {
-    case OpCode::Add:
+    case BinOpCode::Add:
         llvm::outs() << "+";
         break;
-    case OpCode::Sub:
+    case BinOpCode::Sub:
         llvm::outs() << "-";
         break;
-    case OpCode::Mul:
+    case BinOpCode::Mul:
         llvm::outs() << "*";
         break;
-    case OpCode::Div:
+    case BinOpCode::Div:
         llvm::outs() << "/";
         break;
-    case OpCode::Mod:
+    case BinOpCode::Mod:
         llvm::outs() << "%";
         break;
-    case OpCode::LeftShift:
+    case BinOpCode::LeftShift:
         llvm::outs() << "<<";
         break;
-    case OpCode::RightShift:
+    case BinOpCode::RightShift:
         llvm::outs() << ">>";
         break;
-    case OpCode::EqualEqual:
+    case BinOpCode::EqualEqual:
         llvm::outs() << "==";
         break;
-    case OpCode::NotEqual:
+    case BinOpCode::NotEqual:
         llvm::outs() << "!=";
         break;
-    case OpCode::Less:
+    case BinOpCode::Less:
         llvm::outs() << "<";
         break;
-    case OpCode::Greater:
+    case BinOpCode::Greater:
         llvm::outs() << ">";
         break;
-    case OpCode::LessEqual:
+    case BinOpCode::LessEqual:
         llvm::outs() << "<=";
         break;
-    case OpCode::GreaterEqual:
+    case BinOpCode::GreaterEqual:
         llvm::outs() << ">=";
         break;
-    case OpCode::LogicOr:
+    case BinOpCode::LogicOr:
         llvm::outs() << "||";
         break;
-    case OpCode::LogicAnd:
+    case BinOpCode::LogicAnd:
         llvm::outs() << "&&";
         break;
-    case OpCode::BitOr:
+    case BinOpCode::BitOr:
         llvm::outs() << "|";
         break;
-    case OpCode::BitXor:
+    case BinOpCode::BitXor:
         llvm::outs() << "^";
         break;
-    case OpCode::BitAnd:
+    case BinOpCode::BitAnd:
         llvm::outs() << "&";
         break;
     default:

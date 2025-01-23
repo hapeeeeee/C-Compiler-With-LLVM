@@ -57,94 +57,94 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
 
     llvm::Value *val;
     switch (binaryExpr->op) {
-    case OpCode::Add: {
+    case BinOpCode::Add: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateNSWAdd(left, right);
     }
-    case OpCode::Sub: {
+    case BinOpCode::Sub: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateNSWSub(left, right);
     }
-    case OpCode::Mul: {
+    case BinOpCode::Mul: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateNSWMul(left, right);
     }
-    case OpCode::Div: {
+    case BinOpCode::Div: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateSDiv(left, right);
     }
-    case OpCode::Mod: {
+    case BinOpCode::Mod: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateSRem(left, right);
     }
-    case OpCode::LeftShift: {
+    case BinOpCode::LeftShift: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateShl(left, right);
     }
-    case OpCode::RightShift: {
+    case BinOpCode::RightShift: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateLShr(left, right);
         return nullptr;
     }
-    case OpCode::BitOr: {
+    case BinOpCode::BitOr: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateOr(left, right);
     }
-    case OpCode::BitXor: {
+    case BinOpCode::BitXor: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateXor(left, right);
     }
-    case OpCode::BitAnd: {
+    case BinOpCode::BitAnd: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         return irBuilder.CreateAnd(left, right);
     }
-    case OpCode::EqualEqual: {
+    case BinOpCode::EqualEqual: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         val                = irBuilder.CreateICmpEQ(left, right);
         return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     }
-    case OpCode::NotEqual: {
+    case BinOpCode::NotEqual: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         val                = irBuilder.CreateICmpNE(left, right);
         return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     }
-    case OpCode::Less: {
+    case BinOpCode::Less: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         val                = irBuilder.CreateICmpSLT(left, right);
         return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     }
-    case OpCode::Greater: {
+    case BinOpCode::Greater: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         val                = irBuilder.CreateICmpSGT(left, right);
         return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     }
-    case OpCode::LessEqual: {
+    case BinOpCode::LessEqual: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         val                = irBuilder.CreateICmpSLE(left, right);
         return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     }
-    case OpCode::GreaterEqual: {
+    case BinOpCode::GreaterEqual: {
         llvm::Value *left  = binaryExpr->leftExpr->AcceptVisitor(this);
         llvm::Value *right = binaryExpr->rightExpr->AcceptVisitor(this);
         val                = irBuilder.CreateICmpSGE(left, right);
         return irBuilder.CreateIntCast(val, irBuilder.getInt32Ty(), true);
     }
-    case OpCode::LogicOr: {
+    case BinOpCode::LogicOr: {
         //  currBB || nextBB { mergeBB }
         //      currBB(calc leftExpr)
         //     1/     \0
@@ -183,7 +183,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         break;
     }
 
-    case OpCode::LogicAnd: { // currBB && nextBB { mergeBB }
+    case BinOpCode::LogicAnd: { // currBB && nextBB { mergeBB }
         //      currBB(calc leftExpr)
         //     0/     \1
         //   falseBB   nextBB(calc rightExpr)

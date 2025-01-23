@@ -1,8 +1,7 @@
 #include "include/Sema.h"
 
-std::shared_ptr<ASTNode> Sema::SemaIfStmtNode(std::shared_ptr<ASTNode> condExpr,
-                                              std::shared_ptr<ASTNode> thenStmt,
-                                              std::shared_ptr<ASTNode> elseStmt) {
+std::shared_ptr<ASTNode>
+Sema::SemaIfStmtNode(std::shared_ptr<ASTNode> condExpr, std::shared_ptr<ASTNode> thenStmt, std::shared_ptr<ASTNode> elseStmt) {
     auto ifStmt      = std::make_shared<IfStmt>();
     ifStmt->condExpr = condExpr;
     ifStmt->thenStmt = thenStmt;
@@ -37,8 +36,7 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
     return variableDecl;
 }
 
-std::shared_ptr<ASTNode>
-Sema::SemaAssignExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right, Token tok) {
+std::shared_ptr<ASTNode> Sema::SemaAssignExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right, Token tok) {
     assert(left && right);
     if (!llvm::isa<VariableAssessExpr>(left.get())) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_lvalue);
@@ -61,9 +59,17 @@ std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
     return expr;
 }
 
-std::shared_ptr<ASTNode>
-Sema::SemaBinaryExprNode(std::shared_ptr<ASTNode> left, OpCode op, std::shared_ptr<ASTNode> right) {
+std::shared_ptr<ASTNode> Sema::SemaBinaryExprNode(std::shared_ptr<ASTNode> left, BinOpCode op, std::shared_ptr<ASTNode> right) {
     return std::make_shared<BinaryExpr>(left, op, right);
+}
+
+std::shared_ptr<ASTNode>
+Sema::SemaThreeExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> mid, std::shared_ptr<ASTNode> right) {
+    auto node       = std::make_shared<ThreeExpr>();
+    node->condExpr  = left;
+    node->trueExpr  = mid;
+    node->falseExpr = right;
+    return node;
 }
 
 std::shared_ptr<ASTNode> Sema::SemaNumberExprNode(std::shared_ptr<CType> cType, Token &tok) {

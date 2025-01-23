@@ -102,6 +102,9 @@ class Parser {
     /// @brief Checks if the type name
     bool IsTypeName();
 
+    bool IsAssignOperation();
+    bool IsUnaryOperation();
+
     /// @brief Checks if the current token is the expected token without consuming it
     bool IsExcept(TokenType tokTy);
 

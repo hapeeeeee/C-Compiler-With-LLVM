@@ -25,15 +25,12 @@ llvm::Value *PrintVisitor::VisitDeclStmts(DeclStmts *declStmts) {
 }
 
 llvm::Value *PrintVisitor::VisitVariableDecl(VariableDecl *variableDecl) {
-    if (variableDecl->cType == CType::IntType) {
-        llvm::outs() << "int " << llvm::StringRef(variableDecl->token.ptr, variableDecl->token.length) << " ";
-    }
-
+    variableDecl->cType->AcceptVisitor(this);
+    llvm::outs() << llvm::StringRef(variableDecl->token.ptr, variableDecl->token.length);
     if (variableDecl->initNode) {
-        llvm::outs() << "= ";
+        llvm::outs() << " = ";
         variableDecl->initNode->AcceptVisitor(this);
     }
-    llvm::outs() << ";\n";
     return nullptr;
 }
 
@@ -88,6 +85,59 @@ llvm::Value *PrintVisitor::VisitBreakStmt(BreakStmt *breakStmt) {
 
 llvm::Value *PrintVisitor::VisitContinueStmt(ContinueStmt *continueStmtStmt) {
     llvm::outs() << "continue";
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitSizeofExpr(SizeofExpr *sizeofExpr) {
+    llvm::outs() << "sizeof";
+    if (sizeofExpr->sizeofTY) {
+        llvm::outs() << "(";
+        sizeofExpr->sizeofTY->AcceptVisitor(this);
+        llvm::outs() << ")";
+    } else {
+        sizeofExpr->expr->AcceptVisitor(this);
+    }
+
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitUnaryExpr(UnaryExpr *unaryExpr) {
+    switch (unaryExpr->op) {
+    case UnaryOpCode::Positive: {
+        llvm::outs() << "+";
+        break;
+    }
+    case UnaryOpCode::Negative: {
+        llvm::outs() << "-";
+        break;
+    }
+    case UnaryOpCode::Deref: {
+        llvm::outs() << "*";
+        break;
+    }
+    case UnaryOpCode::Addr: {
+        llvm::outs() << "&";
+        break;
+    }
+    case UnaryOpCode::Inc: {
+        llvm::outs() << "++";
+        break;
+    }
+    case UnaryOpCode::Dec: {
+        llvm::outs() << "--";
+        break;
+    }
+    case UnaryOpCode::LogicNot: {
+        llvm::outs() << "!";
+        break;
+    }
+    case UnaryOpCode::BitNot: {
+        llvm::outs() << "~";
+        break;
+    }
+    }
+
+    unaryExpr->expr->AcceptVisitor(this);
     return nullptr;
 }
 
@@ -149,12 +199,91 @@ llvm::Value *PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
     case BinOpCode::BitAnd:
         llvm::outs() << "&";
         break;
+    case BinOpCode::Comma: {
+        llvm::outs() << ",";
+        break;
+    }
+    case BinOpCode::Assign: {
+        llvm::outs() << "=";
+        break;
+    }
+    case BinOpCode::AddAssign: {
+        llvm::outs() << "+=";
+        break;
+    }
+    case BinOpCode::SubAssign: {
+        llvm::outs() << "-=";
+        break;
+    }
+    case BinOpCode::MulAssign: {
+        llvm::outs() << "*=";
+        break;
+    }
+    case BinOpCode::DivAssign: {
+        llvm::outs() << "/=";
+        break;
+    }
+    case BinOpCode::ModAssign: {
+        llvm::outs() << "%=";
+        break;
+    }
+    case BinOpCode::OrAssign: {
+        llvm::outs() << "|=";
+        break;
+    }
+    case BinOpCode::AndAssign: {
+        llvm::outs() << "&=";
+        break;
+    }
+    case BinOpCode::XorAssign: {
+        llvm::outs() << "^=";
+        break;
+    }
+    case BinOpCode::LeftShiftAssign: {
+        llvm::outs() << "<<=";
+        break;
+    }
+    case BinOpCode::RightShiftAssign: {
+        llvm::outs() << ">>=";
+        break;
+    }
+    case BinOpCode::AddAdd: {
+        llvm::outs() << "++";
+        break;
+    }
+    case BinOpCode::SubSub: {
+        llvm::outs() << "--";
+        break;
+    }
     default:
         break;
     }
     llvm::outs() << " ";
 
     binaryExpr->rightExpr->AcceptVisitor(this);
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitThreeExpr(ThreeExpr *threeExpr) {
+    threeExpr->condExpr->AcceptVisitor(this);
+    llvm::outs() << "? ";
+    threeExpr->trueExpr->AcceptVisitor(this);
+    llvm::outs() << ": ";
+    threeExpr->falseExpr->AcceptVisitor(this);
+    llvm::outs() << ";";
+
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitPostIncExpr(PostIncExpr *postIncExpr) {
+    postIncExpr->leftNode->AcceptVisitor(this);
+    llvm::outs() << "++";
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitPostDecExpr(PostDecExpr *postDecExpr) {
+    postDecExpr->leftNode->AcceptVisitor(this);
+    llvm::outs() << "--";
     return nullptr;
 }
 
@@ -168,9 +297,15 @@ llvm::Value *PrintVisitor::VisitVariableAssessExpr(VariableAssessExpr *variableA
     return nullptr;
 }
 
-llvm::Value *PrintVisitor::VisitAssignExpr(AssignExpr *assignExpr) {
-    assignExpr->leftExpr->AcceptVisitor(this);
-    llvm::outs() << " = ";
-    assignExpr->rightExpr->AcceptVisitor(this);
+llvm::Type *PrintVisitor::VisitCPrimaryType(CPrimaryType *ty) {
+    if (ty->GetTypeKind() == CType::CTypeKind::TY_Int) {
+        llvm::outs() << "int ";
+    }
+    return nullptr;
+}
+
+llvm::Type *PrintVisitor::VisitCPointType(CPointType *ty) {
+    ty->GetBaseType()->AcceptVisitor(this);
+    llvm::outs() << "*";
     return nullptr;
 }

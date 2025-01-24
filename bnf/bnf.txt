@@ -4,7 +4,7 @@ stmt                : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt |
 null-stmt           : ";"
 decl-stmt           : decl-spec init-declarator-list? ";"
 decl-spec           : "int"
-init-declarator-list: declarator ("=" expr)? ("," declarator ("=" expr)?)*  
+init-declarator-list: declarator ("=" assign-expr)? ("," declarator ("=" assign-expr)?)*  
 declarator          : "*"* direct-declarator
 direct-declarator   : identifier
 

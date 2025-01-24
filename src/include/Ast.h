@@ -16,9 +16,10 @@ class SizeofExpr;
 class UnaryExpr;
 class BinaryExpr;
 class ThreeExpr;
+class PostIncExpr;
+class PostDecExpr;
 class NumberExpr;
 class VariableAssessExpr;
-class AssignExpr;
 class DeclStmts;
 class BlockStmts;
 class IfStmt;
@@ -48,9 +49,10 @@ class Visitor {
     virtual llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr)                            = 0;
     virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
     virtual llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr)                            = 0;
+    virtual llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr)                      = 0;
+    virtual llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr)                      = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
-    virtual llvm::Value *VisitAssignExpr(AssignExpr *assignExpr)                         = 0;
 };
 
 class Program {
@@ -77,6 +79,8 @@ class ASTNode {
         ND_UnaryExpr,
         ND_BinaryExpr,
         ND_ThreeExpr,
+        ND_PostIncExpr,
+        ND_PostDecExpr,
         ND_NumberExpr,
         ND_VariableAssessExpr,
         ND_AssignExpr,
@@ -238,7 +242,7 @@ class UnaryExpr : public ASTNode {
     std::shared_ptr<ASTNode> expr;
 
   public:
-    UnaryExpr(UnaryOpCode op, std::shared_ptr<ASTNode> expr) : op(op), expr(expr), ASTNode(Nodekind::ND_UnaryExpr) {
+    UnaryExpr() : ASTNode(Nodekind::ND_UnaryExpr) {
     }
 
     llvm::Value *AcceptVisitor(Visitor *v) override {
@@ -253,10 +257,10 @@ class UnaryExpr : public ASTNode {
 class SizeofExpr : public ASTNode {
   public:
     std::shared_ptr<ASTNode> expr;
-    std::shared_ptr<CType> ty;
+    std::shared_ptr<CType> sizeofTY;
 
   public:
-    SizeofExpr(std::shared_ptr<ASTNode> expr, std::shared_ptr<CType> ty) : expr(expr), ty(ty), ASTNode(ND_SizeofExpr) {
+    SizeofExpr() : ASTNode(ND_SizeofExpr) {
     }
 
     llvm::Value *AcceptVisitor(Visitor *v) override {
@@ -342,6 +346,40 @@ class ThreeExpr : public ASTNode {
     }
 };
 
+class PostIncExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> leftNode;
+
+  public:
+    PostIncExpr() : ASTNode(ND_PostIncExpr) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitPostIncExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_PostIncExpr;
+    }
+};
+
+class PostDecExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> leftNode;
+
+  public:
+    PostDecExpr() : ASTNode(ND_PostDecExpr) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitPostDecExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_PostDecExpr;
+    }
+};
+
 class NumberExpr : public ASTNode {
   public:
     NumberExpr() : ASTNode(Nodekind::ND_NumberExpr) {
@@ -367,25 +405,6 @@ class VariableAssessExpr : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_VariableAssessExpr;
-    }
-};
-
-class AssignExpr : public ASTNode {
-  public:
-    std::shared_ptr<ASTNode> leftExpr;
-    std::shared_ptr<ASTNode> rightExpr;
-
-  public:
-    AssignExpr(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right)
-        : leftExpr(left), rightExpr(right), ASTNode(Nodekind::ND_AssignExpr) {
-    }
-
-    llvm::Value *AcceptVisitor(Visitor *v) override {
-        return v->VisitAssignExpr(this);
-    }
-
-    static bool classof(const ASTNode *node) {
-        return node->nodeKind == Nodekind::ND_AssignExpr;
     }
 };
 

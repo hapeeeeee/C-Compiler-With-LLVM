@@ -29,7 +29,6 @@ class CodeGen : public Visitor {
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
-    llvm::Value *VisitAssignExpr(AssignExpr *assignExpr) override;
 
   private:
     llvm::LLVMContext llvmContext;
@@ -37,10 +36,8 @@ class CodeGen : public Visitor {
     std::shared_ptr<llvm::Module> llvmModule;
     llvm::Function *currFunc{nullptr};
 
-    llvm::DenseMap<ASTNode *, llvm::BasicBlock *>
-        breakTargetBBs; ///< Target block for the break statement
-    llvm::DenseMap<ASTNode *, llvm::BasicBlock *>
-        continueTargetBBs; ///< Target block for the continue statement
+    llvm::DenseMap<ASTNode *, llvm::BasicBlock *> breakTargetBBs;    ///< Target block for the break statement
+    llvm::DenseMap<ASTNode *, llvm::BasicBlock *> continueTargetBBs; ///< Target block for the continue statement
     llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> varAddrTypeMap;
 };
 

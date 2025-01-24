@@ -47,7 +47,7 @@ std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     }
 
     auto declNode = std::make_shared<DeclStmts>();
-
+    // int a = 1, b = 1;
     while (token.tokenTy != TokenType::Semi) {
         declNode->nodeVec.push_back(ParserDeclarator(cTy));
         if (token.tokenTy == TokenType::Comma) {
@@ -84,7 +84,7 @@ std::shared_ptr<ASTNode> Parser::ParserDeclarator(std::shared_ptr<CType> baseTyp
     if (token.tokenTy == TokenType::Equal) {
         Advance();
         VariableDecl *variableDeclNode = llvm::dyn_cast<VariableDecl>(node.get());
-        variableDeclNode->initNode     = ParserExpr();
+        variableDeclNode->initNode     = ParserAssignExpr();
     }
     return node;
 }
@@ -134,7 +134,7 @@ std::shared_ptr<ASTNode> Parser::ParserForStmt() {
     nodesContainContinue.push_back(for_stmt);
     sema.EnterScope();
     std::shared_ptr<ASTNode> initNode = nullptr, condNode = nullptr, thenNode = nullptr, bodyNode = nullptr;
-    if (IsTypeName()) {
+    if (IsTypeName(token.tokenTy)) {
         initNode = ParserDeclStmt();
     } else {
         if (token.tokenTy != TokenType::Semi) {
@@ -195,7 +195,6 @@ std::shared_ptr<ASTNode> Parser::ParserExpr() {
         auto rightNode = ParserAssignExpr();
         leftNode       = sema.SemaBinaryExprNode(leftNode, BinOpCode::Comma, rightNode);
     }
-    Consume(TokenType::Semi);
     return leftNode;
 }
 
@@ -381,6 +380,10 @@ std::shared_ptr<ASTNode> Parser::ParserRelationalExpr() {
 /// @brief shift-expr : add-expr ( ("<<" | ">>") add-expr )*
 std::shared_ptr<ASTNode> Parser::ParserShiftExpr() {
     auto left = ParserAddExpr();
+    if (left) {
+        printf("1111111");
+    }
+    // printf("%s", left->nodeKind);
     while (token.tokenTy == TokenType::LessLess || token.tokenTy == TokenType::GreaterGreater) {
         BinOpCode op;
         if (token.tokenTy == TokenType::LessLess) {
@@ -390,7 +393,12 @@ std::shared_ptr<ASTNode> Parser::ParserShiftExpr() {
         }
         Advance();
         auto right = ParserAddExpr();
-        left       = sema.SemaBinaryExprNode(left, op, right);
+        if (left) {
+            printf("22222222222");
+        }
+
+        // printf("%d", right->nodeKind);
+        left = sema.SemaBinaryExprNode(left, op, right);
     }
     return left;
 }
@@ -433,6 +441,7 @@ std::shared_ptr<ASTNode> Parser::ParserMultExpr() {
     return left;
 }
 
+/// @brief unary-expr : postfix-expr | ("++"|"--"|"&"|"*"|"-"|"~"|"!"|"sizeof") unary-expr | "sizeof" "(" type-name ")"
 std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
     auto node = ParserPostfixExpr();
     if (!IsUnaryOperation()) {
@@ -440,6 +449,26 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
     }
 
     if (token.tokenTy == TokenType::KW_Sizeof) {
+        Consume(TokenType::KW_Sizeof);
+
+        bool isTypeName = false;
+        if (token.tokenTy == TokenType::LeftParent) {
+            lexer.SaveState();
+            Token nextTok;
+            lexer.NextToken(nextTok);
+            isTypeName = IsTypeName(nextTok.tokenTy);
+            lexer.RestoreState();
+        }
+
+        auto sizeofNode = std::make_shared<SizeofExpr>();
+        if (isTypeName) {
+            Consume(TokenType::LeftParent);
+            sizeofNode->sizeofTY = ParserType();
+            Consume(TokenType::RightParent);
+        } else {
+            sizeofNode->expr = ParserUnaryExpr();
+            return sizeofNode;
+        }
     }
 
     UnaryOpCode op;
@@ -477,9 +506,30 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
         break;
     }
     }
+
+    auto unaryNode  = std::make_shared<UnaryExpr>();
+    unaryNode->expr = ParserUnaryExpr();
+    unaryNode->op   = op;
+    return unaryNode;
 }
 
 std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
+    auto primaryNode = ParserPrimaryExpr();
+    while (true) {
+        if (token.tokenTy == TokenType::PlusPlus) {
+            auto postIncNode      = std::make_shared<PostIncExpr>();
+            postIncNode->leftNode = primaryNode;
+            Consume(TokenType::PlusPlus);
+            continue;
+        }
+        if (token.tokenTy == TokenType::MinusMinus) {
+            auto postDecNode      = std::make_shared<PostDecExpr>();
+            postDecNode->leftNode = primaryNode;
+            Consume(TokenType::MinusMinus);
+            continue;
+        }
+        break;
+    }
 }
 
 /// @brief primary-expr : identifier | number | "(" expr")"
@@ -502,8 +552,23 @@ std::shared_ptr<ASTNode> Parser::ParserPrimaryExpr() {
     }
 }
 
-bool Parser::IsTypeName() {
+std::shared_ptr<CType> Parser::ParserType() {
+    std::shared_ptr<CType> baseType = nullptr;
     if (token.tokenTy == TokenType::KW_int) {
+        baseType = CType::IntType;
+    }
+    assert(baseType);
+
+    Consume(token.tokenTy);
+    while (token.tokenTy == TokenType::Star) {
+        baseType = std::make_shared<CPointType>(baseType);
+        Consume(TokenType::Star);
+    }
+    return baseType;
+}
+
+bool Parser::IsTypeName(TokenType ty) {
+    if (ty == TokenType::KW_int) {
         return true;
     }
     return false;

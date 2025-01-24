@@ -36,16 +36,6 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
     return variableDecl;
 }
 
-std::shared_ptr<ASTNode> Sema::SemaAssignExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right, Token tok) {
-    assert(left && right);
-    if (!llvm::isa<VariableAssessExpr>(left.get())) {
-        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_lvalue);
-    }
-    auto expr   = std::make_shared<AssignExpr>(left, right);
-    expr->token = left->token;
-    return expr;
-}
-
 std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindVarSymbol(content);

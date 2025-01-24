@@ -342,16 +342,3 @@ llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssess
     llvm::Type *ty                              = pair.second;
     return irBuilder.CreateLoad(ty, value, name);
 }
-
-llvm::Value *CodeGen::VisitAssignExpr(AssignExpr *assignExpr) {
-    llvm::StringRef name(assignExpr->token.ptr, assignExpr->token.length);
-    auto leftExpr                               = assignExpr->leftExpr;
-    VariableAssessExpr *leftAccessExpr          = (VariableAssessExpr *)leftExpr.get();
-    std::pair<llvm::Value *, llvm::Type *> pair = varAddrTypeMap[name];
-
-    llvm::Type *leftValueTy    = pair.second;
-    llvm::Value *leftValueAddr = pair.first;
-    llvm::Value *rightValue    = assignExpr->rightExpr->AcceptVisitor(this);
-    irBuilder.CreateStore(rightValue, leftValueAddr);
-    return irBuilder.CreateLoad(leftValueTy, leftValueAddr, name);
-}

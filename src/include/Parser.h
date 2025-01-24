@@ -98,9 +98,11 @@ class Parser {
     std::shared_ptr<ASTNode> ParserPostfixExpr();
     std::shared_ptr<ASTNode> ParserPrimaryExpr();
 
+    std::shared_ptr<CType> ParserType();
+
   private:
     /// @brief Checks if the type name
-    bool IsTypeName();
+    bool IsTypeName(TokenType ty);
 
     bool IsAssignOperation();
     bool IsUnaryOperation();

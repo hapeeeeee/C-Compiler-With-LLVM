@@ -212,16 +212,8 @@ std::shared_ptr<ASTNode> Parser::ParserAssignExpr() {
         op = BinOpCode::Assign;
         break;
     }
-    case TokenType::PlusPlus: {
-        op = BinOpCode::AddAdd;
-        break;
-    }
     case TokenType::PlusEqual: {
         op = BinOpCode::AddAssign;
-        break;
-    }
-    case TokenType::MinusMinus: {
-        op = BinOpCode::SubSub;
         break;
     }
     case TokenType::MinusEqual: {
@@ -380,9 +372,7 @@ std::shared_ptr<ASTNode> Parser::ParserRelationalExpr() {
 /// @brief shift-expr : add-expr ( ("<<" | ">>") add-expr )*
 std::shared_ptr<ASTNode> Parser::ParserShiftExpr() {
     auto left = ParserAddExpr();
-    if (left) {
-        printf("1111111");
-    }
+
     // printf("%s", left->nodeKind);
     while (token.tokenTy == TokenType::LessLess || token.tokenTy == TokenType::GreaterGreater) {
         BinOpCode op;
@@ -393,10 +383,6 @@ std::shared_ptr<ASTNode> Parser::ParserShiftExpr() {
         }
         Advance();
         auto right = ParserAddExpr();
-        if (left) {
-            printf("22222222222");
-        }
-
         // printf("%d", right->nodeKind);
         left = sema.SemaBinaryExprNode(left, op, right);
     }
@@ -443,9 +429,9 @@ std::shared_ptr<ASTNode> Parser::ParserMultExpr() {
 
 /// @brief unary-expr : postfix-expr | ("++"|"--"|"&"|"*"|"-"|"~"|"!"|"sizeof") unary-expr | "sizeof" "(" type-name ")"
 std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
-    auto node = ParserPostfixExpr();
+    // auto node = ;
     if (!IsUnaryOperation()) {
-        return node;
+        return ParserPostfixExpr();
     }
 
     if (token.tokenTy == TokenType::KW_Sizeof) {
@@ -530,6 +516,7 @@ std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
         }
         break;
     }
+    return primaryNode;
 }
 
 /// @brief primary-expr : identifier | number | "(" expr")"

@@ -303,8 +303,6 @@ enum class BinOpCode {
     XorAssign,        ///< ^=
     LeftShiftAssign,  ///< <<=
     RightShiftAssign, ///< >>=
-    AddAdd,           ///< ++
-    SubSub,           ///< --
 };
 
 class BinaryExpr : public ASTNode {

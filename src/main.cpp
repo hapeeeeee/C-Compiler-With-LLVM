@@ -34,8 +34,8 @@ int main(int argc, char *argv[]) {
     Sema sema(diag);
     Parser parser(lex, sema);
     std::shared_ptr<Program> program = parser.ParserProgram();
-    PrintVisitor printVisitor(program);
-    // CodeGen codeGen(program);
+    // PrintVisitor printVisitor(program);
+    CodeGen codeGen(program);
 
     return 0;
 }

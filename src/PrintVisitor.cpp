@@ -247,14 +247,6 @@ llvm::Value *PrintVisitor::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         llvm::outs() << ">>=";
         break;
     }
-    case BinOpCode::AddAdd: {
-        llvm::outs() << "++";
-        break;
-    }
-    case BinOpCode::SubSub: {
-        llvm::outs() << "--";
-        break;
-    }
     default:
         break;
     }

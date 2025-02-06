@@ -34,7 +34,7 @@ class CType {
     virtual ~CType() {
     }
 
-    virtual void AcceptVisitor(TypeVisitor *v) {
+    virtual llvm::Type *AcceptVisitor(TypeVisitor *v) {
     }
 
     const CTypeKind GetTypeKind() const {
@@ -52,7 +52,7 @@ class CPrimaryType : public CType {
     CPrimaryType(int size, int align, CTypeKind kind) : CType(size, align, kind) {
     }
 
-    void AcceptVisitor(TypeVisitor *v) override {
+    llvm::Type *AcceptVisitor(TypeVisitor *v) override {
         v->VisitCPrimaryType(this);
     }
 
@@ -73,7 +73,7 @@ class CPointType : public CType {
         return baseType;
     }
 
-    void AcceptVisitor(TypeVisitor *v) override {
+    llvm::Type *AcceptVisitor(TypeVisitor *v) override {
         v->VisitCPointType(this);
     }
 

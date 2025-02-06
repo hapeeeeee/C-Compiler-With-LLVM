@@ -15,7 +15,7 @@
 /// The class also maintains a mapping between variable names and their
 /// corresponding LLVM IR values and types, enabling efficient code generation
 /// for variable declarations, assignments, and accesses.
-class CodeGen : public Visitor {
+class CodeGen : public Visitor, public TypeVisitor {
   public:
     CodeGen(std::shared_ptr<Program> program);
     llvm::Value *VisitProgram(Program *program) override;
@@ -28,7 +28,15 @@ class CodeGen : public Visitor {
     llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
+    llvm::Value *VisitSizeofExpr(SizeofExpr *sizeofExpr) override;
+    llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr) override;
+    llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr) override;
+    llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr) override;
+    llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
+
+    llvm::Type *VisitCPrimaryType(CPrimaryType *ty) override;
+    llvm::Type *VisitCPointType(CPointType *ty) override;
 
   private:
     llvm::LLVMContext llvmContext;

@@ -5,7 +5,10 @@
 
 class PrintVisitor : public Visitor, public TypeVisitor {
   public:
-    PrintVisitor(std::shared_ptr<Program> program);
+    llvm::raw_ostream *out;
+
+  public:
+    PrintVisitor(std::shared_ptr<Program> program, llvm::raw_ostream *out);
     llvm::Value *VisitProgram(Program *program) override;
     llvm::Value *VisitDeclStmts(DeclStmts *declStmts) override;
     llvm::Value *VisitVariableDecl(VariableDecl *variableDecl) override;

@@ -453,8 +453,8 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
             Consume(TokenType::RightParent);
         } else {
             sizeofNode->expr = ParserUnaryExpr();
-            return sizeofNode;
         }
+        return sizeofNode;
     }
 
     UnaryOpCode op;
@@ -492,7 +492,7 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
         break;
     }
     }
-
+    Advance();
     auto unaryNode  = std::make_shared<UnaryExpr>();
     unaryNode->expr = ParserUnaryExpr();
     unaryNode->op   = op;
@@ -505,12 +505,14 @@ std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
         if (token.tokenTy == TokenType::PlusPlus) {
             auto postIncNode      = std::make_shared<PostIncExpr>();
             postIncNode->leftNode = primaryNode;
+            primaryNode           = postIncNode;
             Consume(TokenType::PlusPlus);
             continue;
         }
         if (token.tokenTy == TokenType::MinusMinus) {
             auto postDecNode      = std::make_shared<PostDecExpr>();
             postDecNode->leftNode = primaryNode;
+            primaryNode           = postDecNode;
             Consume(TokenType::MinusMinus);
             continue;
         }

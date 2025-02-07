@@ -35,6 +35,7 @@ class CType {
     }
 
     virtual llvm::Type *AcceptVisitor(TypeVisitor *v) {
+        return nullptr;
     }
 
     const CTypeKind GetTypeKind() const {
@@ -53,7 +54,7 @@ class CPrimaryType : public CType {
     }
 
     llvm::Type *AcceptVisitor(TypeVisitor *v) override {
-        v->VisitCPrimaryType(this);
+        return v->VisitCPrimaryType(this);
     }
 
     static bool classof(const CType *ty) {
@@ -74,7 +75,7 @@ class CPointType : public CType {
     }
 
     llvm::Type *AcceptVisitor(TypeVisitor *v) override {
-        v->VisitCPointType(this);
+        return v->VisitCPointType(this);
     }
 
     static bool classof(const CType *ty) {

@@ -266,8 +266,9 @@ std::shared_ptr<ASTNode> Parser::ParserConditionalExpr() {
     Consume(TokenType::Question);
     auto midNode = ParserExpr();
     Consume(TokenType::Colon);
+    Token tmp      = token;
     auto rightNode = ParserConditionalExpr();
-    return sema.SemaThreeExprNode(leftNode, midNode, rightNode);
+    return sema.SemaThreeExprNode(leftNode, midNode, rightNode, tmp);
 }
 
 /// @brief logicor-expr : logicand-expr ("||" logicand-expr)*
@@ -446,14 +447,16 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
             lexer.RestoreState();
         }
 
-        auto sizeofNode = std::make_shared<SizeofExpr>();
+        std::shared_ptr<CType> sizeofTy     = nullptr;
+        std::shared_ptr<ASTNode> sizeofExpr = nullptr;
         if (isTypeName) {
             Consume(TokenType::LeftParent);
-            sizeofNode->sizeofTY = ParserType();
+            sizeofTy = ParserType();
             Consume(TokenType::RightParent);
         } else {
-            sizeofNode->expr = ParserUnaryExpr();
+            sizeofExpr = ParserUnaryExpr();
         }
+        auto sizeofNode = sema.SemaSizeofExprNode(sizeofExpr, sizeofTy);
         return sizeofNode;
     }
 
@@ -493,9 +496,8 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
     }
     }
     Advance();
-    auto unaryNode  = std::make_shared<UnaryExpr>();
-    unaryNode->expr = ParserUnaryExpr();
-    unaryNode->op   = op;
+    Token tmp      = token;
+    auto unaryNode = sema.SemaUnaryExprNode(op, ParserUnaryExpr(), token);
     return unaryNode;
 }
 
@@ -503,16 +505,12 @@ std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
     auto primaryNode = ParserPrimaryExpr();
     while (true) {
         if (token.tokenTy == TokenType::PlusPlus) {
-            auto postIncNode      = std::make_shared<PostIncExpr>();
-            postIncNode->leftNode = primaryNode;
-            primaryNode           = postIncNode;
+            primaryNode = sema.SemaPostIncExprNode(primaryNode);
             Consume(TokenType::PlusPlus);
             continue;
         }
         if (token.tokenTy == TokenType::MinusMinus) {
-            auto postDecNode      = std::make_shared<PostDecExpr>();
-            postDecNode->leftNode = primaryNode;
-            primaryNode           = postDecNode;
+            primaryNode = sema.SemaPostDecExprNode(primaryNode);
             Consume(TokenType::MinusMinus);
             continue;
         }

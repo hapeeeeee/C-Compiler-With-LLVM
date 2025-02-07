@@ -15,4 +15,6 @@ DIAG(error_redefined, Error, "redefined symbol '{0}'")
 DIAG(error_undefined, Error, "undefined symbol '{0}'")
 DIAG(error_lvalue, Error, "Required lvalue on the assign operation left side")
 DIAG(unexpect_typename, Error, "Unexcept type name '{0}'")
+DIAG(unsame_typename, Error, "Except Same type")
+DIAG(unexcept_type, Error, "Except '{0}' type")
 #undef DIAG

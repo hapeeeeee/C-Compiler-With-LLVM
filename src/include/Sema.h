@@ -32,10 +32,16 @@ class Sema {
 
     std::shared_ptr<ASTNode> SemaVariableAccessExprNode(Token &tok);
 
+    std::shared_ptr<ASTNode> SemaSizeofExprNode(std::shared_ptr<ASTNode> expr, std::shared_ptr<CType> sizeofTY);
+    std::shared_ptr<ASTNode> SemaUnaryExprNode(UnaryOpCode op, std::shared_ptr<ASTNode> expr, Token tok);
+
     std::shared_ptr<ASTNode> SemaBinaryExprNode(std::shared_ptr<ASTNode> left, BinOpCode op, std::shared_ptr<ASTNode> right);
 
     std::shared_ptr<ASTNode>
-    SemaThreeExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> mid, std::shared_ptr<ASTNode> right);
+    SemaThreeExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> mid, std::shared_ptr<ASTNode> right, Token tok);
+
+    std::shared_ptr<ASTNode> SemaPostIncExprNode(std::shared_ptr<ASTNode> leftNode);
+    std::shared_ptr<ASTNode> SemaPostDecExprNode(std::shared_ptr<ASTNode> leftNode);
 
     std::shared_ptr<ASTNode> SemaNumberExprNode(std::shared_ptr<CType> cType, Token &tok);
 

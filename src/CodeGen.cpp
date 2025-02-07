@@ -195,7 +195,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         break;
     }
     case BinOpCode::Assign: {
-        irBuilder.CreateLoad();
+        // irBuilder.CreateLoad();
         break;
     }
     case BinOpCode::AddAssign: {

@@ -81,7 +81,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         return irBuilder.CreateShl(left, right);
     }
     case BinOpCode::RightShift: {
-        return irBuilder.CreateLShr(left, right);
+        return irBuilder.CreateAShr(left, right);
     }
     case BinOpCode::BitOr: {
         return irBuilder.CreateOr(left, right);
@@ -124,7 +124,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         //      \     /
         //      mergeBB
         auto trueBB  = llvm::BasicBlock::Create(llvmContext, "trueBB");
-        auto nextBB  = llvm::BasicBlock::Create(llvmContext, "nextBB", currFunc);
+        auto nextBB  = llvm::BasicBlock::Create(llvmContext, "nextBB");
         auto mergeBB = llvm::BasicBlock::Create(llvmContext, "mergeBB");
 
         llvm::Value *left = binaryExpr->leftExpr->AcceptVisitor(this);
@@ -135,6 +135,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         irBuilder.SetInsertPoint(trueBB);
         irBuilder.CreateBr(mergeBB);
 
+        nextBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(nextBB);
         // Note: The right-hand side block code generation here might create new basic blocks. After
         // the generation is complete, the insertPoint might no longer be at nextBB, so the
@@ -191,42 +192,84 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         return phi;
         break;
     }
-    case BinOpCode::Comma: {
-        break;
-    }
+    // case BinOpCode::Comma: {
+    //     break;
+    // }
     case BinOpCode::Assign: {
-        // irBuilder.CreateLoad();
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        irBuilder.CreateStore(right, loadInst->getPointerOperand());
+        return right;
     }
     case BinOpCode::AddAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateAdd(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::SubAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateSub(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::MulAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateMul(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::DivAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateSDiv(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::ModAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateSRem(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::OrAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateOr(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::AndAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateAnd(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::XorAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateXor(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::LeftShiftAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateShl(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     case BinOpCode::RightShiftAssign: {
-        break;
+        LoadInst *loadInst = llvm::dyn_cast<LoadInst>(left);
+        assert(loadInst);
+        llvm::Value *val = irBuilder.CreateAShr(left, right);
+        irBuilder.CreateStore(val, loadInst->getPointerOperand());
+        return val;
     }
     default:
         break;
@@ -352,18 +395,90 @@ llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssess
 }
 
 llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *sizeofExpr) {
+    llvm::Type *ty = nullptr;
+    if (sizeofExpr->sizeofTY) {
+        ty = sizeofExpr->sizeofTY->AcceptVisitor(this);
+    } else {
+        ty = sizeofExpr->expr->cType->AcceptVisitor(this);
+    }
+
+    if (ty->isPointerTy()) {
+        return irBuilder.getInt32(8);
+    } else if (ty->isIntegerTy()) {
+        return irBuilder.getInt32(4);
+    } else {
+        assert(0);
+        return nullptr;
+    }
 }
 
 llvm::Value *CodeGen::VisitUnaryExpr(UnaryExpr *unaryExpr) {
 }
 
 llvm::Value *CodeGen::VisitThreeExpr(ThreeExpr *threeExpr) {
+
+    llvm::Value *condVal = threeExpr->condExpr->AcceptVisitor(this);
+    llvm::Value *condRet = irBuilder.CreateICmpNE(condVal, irBuilder.getInt32(0));
+
+    BasicBlock *trueBB  = llvm::BasicBlock::Create(llvmContext, "threeExpr_trueBB");
+    BasicBlock *falseBB = llvm::BasicBlock::Create(llvmContext, "threeExpr_falseBB");
+    BasicBlock *lastBB  = llvm::BasicBlock::Create(llvmContext, "threeExpr_lastBB");
+    irBuilder.CreateCondBr(condRet, trueBB, falseBB);
+
+    trueBB->insertInto(currFunc);
+    irBuilder.SetInsertPoint(trueBB);
+    llvm::Value *trueVal = threeExpr->trueExpr->AcceptVisitor(this);
+    trueBB               = irBuilder.GetInsertBlock();
+    irBuilder.CreateBr(lastBB);
+
+    falseBB->insertInto(currFunc);
+    irBuilder.SetInsertPoint(falseBB);
+    llvm::Value *falseVal = threeExpr->falseExpr->AcceptVisitor(this);
+    falseBB               = irBuilder.GetInsertBlock();
+    irBuilder.CreateBr(lastBB);
+
+    lastBB->insertInto(currFunc);
+    irBuilder.SetInsertPoint(lastBB);
+    llvm::PHINode *phi = llvm::PHINode::Create(threeExpr->trueExpr->cType->AcceptVisitor(this), 2);
+    phi->addIncoming(trueVal, trueBB);
+    phi->addIncoming(falseVal, falseBB);
+    // lastBB->insertInto(currFunc);
+    // irBuilder.SetInsertPoint(lastBB);
+    return phi;
 }
 
 llvm::Value *CodeGen::VisitPostIncExpr(PostIncExpr *postIncExpr) {
+    llvm::Type *ty      = postIncExpr->leftNode->cType->AcceptVisitor(this);
+    llvm::Value *oldVal = postIncExpr->leftNode->AcceptVisitor(this);
+    if (ty->isPointerTy()) {
+        llvm::Value *newVal = irBuilder.CreateInBoundsGEP(ty, oldVal, {irBuilder.getInt32(1)});
+        irBuilder.CreateStore(newVal, llvm::dyn_cast<LoadInst>(oldVal)->getPointerOperand());
+        return oldVal;
+    } else if (ty->isIntegerTy()) {
+        llvm::Value *newVal = irBuilder.CreateAdd(oldVal, irBuilder.getInt32(1));
+        irBuilder.CreateStore(newVal, llvm::dyn_cast<LoadInst>(oldVal)->getPointerOperand());
+        return oldVal;
+    } else {
+        assert(0);
+        return nullptr;
+    }
 }
 
 llvm::Value *CodeGen::VisitPostDecExpr(PostDecExpr *postDecExpr) {
+    llvm::Type *ty      = postDecExpr->leftNode->cType->AcceptVisitor(this);
+    llvm::Value *oldVal = postDecExpr->leftNode->AcceptVisitor(this);
+    if (ty->isPointerTy()) {
+        llvm::Value *newVal = irBuilder.CreateInBoundsGEP(ty, oldVal, {irBuilder.getInt32(-1)});
+        irBuilder.CreateStore(newVal, llvm::dyn_cast<LoadInst>(oldVal)->getPointerOperand());
+        return oldVal;
+    } else if (ty->isIntegerTy()) {
+        llvm::Value *newVal = irBuilder.CreateSub(oldVal, irBuilder.getInt32(1));
+        irBuilder.CreateStore(newVal, llvm::dyn_cast<LoadInst>(oldVal)->getPointerOperand());
+        return oldVal;
+    } else {
+        assert(0);
+        return nullptr;
+    }
 }
 
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {

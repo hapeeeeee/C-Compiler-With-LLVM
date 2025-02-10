@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
 
     std::string s;
     llvm::raw_string_ostream ss(s);
-    PrintVisitor printVisitor(program, &ss);
-    llvm::outs() << s;
-    // CodeGen codeGen(program);
+    // PrintVisitor printVisitor(program, &ss);
+    // llvm::outs() << s;
+    CodeGen codeGen(program);
 
-    return 0; 
+    return 0;
 }

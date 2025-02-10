@@ -77,7 +77,8 @@ std::shared_ptr<ASTNode> Sema::SemaSizeofExprNode(std::shared_ptr<ASTNode> expr,
     auto node      = std::make_shared<SizeofExpr>();
     node->sizeofTY = sizeofTY;
     node->expr     = expr;
-    node->cType    = CType::IntType;
+    assert(sizeofTY || expr);
+    node->cType = CType::IntType;
     return node;
 }
 
@@ -117,7 +118,6 @@ std::shared_ptr<ASTNode> Sema::SemaUnaryExprNode(UnaryOpCode op, std::shared_ptr
     default:
         break;
     }
-
     return node;
 }
 

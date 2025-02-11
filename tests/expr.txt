@@ -1,1 +1,1 @@
-{int a=0;int *p=&a;+a;-a;!a;~a;++a;--a;sizeof a;&a;*p;}
+{int a=1,b=2,ans;ans =(a==1?(b== 2 ?3 : 5): 0);}

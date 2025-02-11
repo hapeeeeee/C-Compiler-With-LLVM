@@ -50,7 +50,9 @@ std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
 }
 
 std::shared_ptr<ASTNode> Sema::SemaBinaryExprNode(std::shared_ptr<ASTNode> left, BinOpCode op, std::shared_ptr<ASTNode> right) {
-    return std::make_shared<BinaryExpr>(left, op, right);
+    auto binaryExpr   = std::make_shared<BinaryExpr>(left, op, right);
+    binaryExpr->cType = left->cType;
+    return binaryExpr;
 }
 
 std::shared_ptr<ASTNode>

@@ -393,7 +393,14 @@ std::shared_ptr<ASTNode> Parser::ParserShiftExpr() {
 /// @brief  add-expr : mult-expr ( ("+" | "-") mult-expr)*
 std::shared_ptr<ASTNode> Parser::ParserAddExpr() {
     auto left = ParserMultExpr();
-    // a + b + c + d...
+    // a + b + c + d
+    //             +
+    //           /   \
+    //         +      d
+    //       /   \
+    //      +     c
+    //    /  \   
+    // a(int) b(int)
     while (token.tokenTy == TokenType::Plus || token.tokenTy == TokenType::Minus) {
         BinOpCode op;
         if (token.tokenTy == TokenType::Plus) {

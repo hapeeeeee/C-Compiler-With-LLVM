@@ -15,7 +15,7 @@ bool TestProgramUseJit(llvm::StringRef content, int expectValue) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     LLVMLinkInMCJIT();
-    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buf = llvm : : MemoryBuffer::getMemBuffer(content, "stdin");
+    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buf = llvm::MemoryBuffer::getMemBuffer(content, "stdin");
     if (!buf) {
         llvm::errs() << "open file failed!!!\n";
         return false;
@@ -63,7 +63,7 @@ TEST(CodeGenTest, add_assign) {
 }
 
 TEST(CodeGenTest, sub_assign) {
-    bool res = TestProgramUseJit("(int a;int b=4;a=3;b = 5; a -= b;}", -2);
+    bool res = TestProgramUseJit("{int a;int b=4;a=3;b = 5; a -= b;}", -2);
     ASSERT_EQ(res, true);
 }
 
@@ -108,7 +108,7 @@ TEST(CodeGenTest, right_shift_assign) {
 }
 
 TEST(CodeGenTest, three_op1) {
-    bool res = TestProgramUseJit("{inta=1,b=2,ans;ans =(a==1?(b== 2 ?3 : 5): 0);}", 3);
+    bool res = TestProgramUseJit("{int a=1,b=2,ans;ans =(a==1?(b== 2 ?3 : 5): 0);}", 3);
     ASSERT_EQ(res, true);
 }
 

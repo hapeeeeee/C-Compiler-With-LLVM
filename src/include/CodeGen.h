@@ -18,6 +18,11 @@
 class CodeGen : public Visitor, public TypeVisitor {
   public:
     CodeGen(std::shared_ptr<Program> program);
+
+    std::unique_ptr<llvm::Module> &GetModule() {
+        return llvmModule;
+    }
+
     llvm::Value *VisitProgram(Program *program) override;
     llvm::Value *VisitDeclStmts(DeclStmts *declStmts) override;
     llvm::Value *VisitBlockStmts(BlockStmts *blockStmts) override;
@@ -41,7 +46,7 @@ class CodeGen : public Visitor, public TypeVisitor {
   private:
     llvm::LLVMContext llvmContext;
     llvm::IRBuilder<> irBuilder{llvmContext};
-    std::shared_ptr<llvm::Module> llvmModule;
+    std::unique_ptr<llvm::Module> llvmModule;
     llvm::Function *currFunc{nullptr};
 
     llvm::DenseMap<ASTNode *, llvm::BasicBlock *> breakTargetBBs;    ///< Target block for the break statement

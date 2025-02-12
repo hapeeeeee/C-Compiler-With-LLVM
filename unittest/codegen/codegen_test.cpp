@@ -132,7 +132,7 @@ TEST(CodeGenTest, sizeof_unary) {
 }
 
 TEST(CodeGenTest, unary_positive) {
-    bool res = TestProgramUseJit("{inta=10;+a;}", 10);
+    bool res = TestProgramUseJit("{int a=10;+a;}", 10);
     ASSERT_EQ(res, true);
 }
 

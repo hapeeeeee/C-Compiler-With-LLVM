@@ -126,12 +126,14 @@ std::shared_ptr<ASTNode> Sema::SemaUnaryExprNode(UnaryOpCode op, std::shared_ptr
 std::shared_ptr<ASTNode> Sema::SemaPostIncExprNode(std::shared_ptr<ASTNode> leftNode) {
     auto node      = std::make_shared<PostIncExpr>();
     node->leftNode = leftNode;
+    node->cType    = leftNode->cType;
     return node;
 }
 
 std::shared_ptr<ASTNode> Sema::SemaPostDecExprNode(std::shared_ptr<ASTNode> leftNode) {
     auto node      = std::make_shared<PostDecExpr>();
     node->leftNode = leftNode;
+    node->cType    = leftNode->cType;
     return node;
 }
 

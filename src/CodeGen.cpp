@@ -31,11 +31,11 @@ llvm::Value *CodeGen::VisitProgram(Program *program) {
     // irBuilder.CreateRet(irBuilder.getInt32(0));
 
     irBuilder.CreateRet(lastVal);
-    // verifyFunction(*mainFunc);
-    llvmModule->print(llvm::outs(), nullptr);
-    // if (verifyModule(*llvmModule, &llvm::outs())) {
-    //     llvmModule->print(llvm::outs(), nullptr);
-    // }
+    verifyFunction(*mainFunc);
+    // llvmModule->print(llvm::outs(), nullptr);
+    if (verifyModule(*llvmModule, &llvm::outs())) {
+        llvmModule->print(llvm::outs(), nullptr);
+    }
 
     return nullptr;
 }
@@ -320,7 +320,7 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
         llvm::Value *initVal = variableDecl->initNode->AcceptVisitor(this);
         irBuilder.CreateStore(initVal, value);
     }
-    return value;
+    return irBuilder.CreateLoad(ty, value);
 }
 
 llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
@@ -423,14 +423,13 @@ llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssess
     return irBuilder.CreateLoad(ty, value, name);
 }
 
-llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *sizeofExpr) {
+llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *expr) {
     llvm::Type *ty = nullptr;
-    if (sizeofExpr->sizeofTY) {
-        ty = sizeofExpr->sizeofTY->AcceptVisitor(this);
+    if (expr->expr) {
+        ty = expr->expr->cType->AcceptVisitor(this);
     } else {
-        ty = sizeofExpr->expr->cType->AcceptVisitor(this);
+        ty = expr->sizeofTY->AcceptVisitor(this);
     }
-
     if (ty->isPointerTy()) {
         return irBuilder.getInt32(8);
     } else if (ty->isIntegerTy()) {
@@ -439,6 +438,21 @@ llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *sizeofExpr) {
         assert(0);
         return nullptr;
     }
+    // llvm::Type *ty = nullptr;
+    // if (sizeofExpr->sizeofTY) {
+    //     ty = sizeofExpr->sizeofTY->AcceptVisitor(this);
+    // } else {
+    //     ty = sizeofExpr->expr->cType->AcceptVisitor(this);
+    // }
+
+    // if (ty->isPointerTy()) {
+    //     return irBuilder.getInt32(8);
+    // } else if (ty->isIntegerTy()) {
+    //     return irBuilder.getInt32(4);
+    // } else {
+    //     assert(0);
+    //     return nullptr;
+    // }
 }
 
 llvm::Value *CodeGen::VisitUnaryExpr(UnaryExpr *unaryExpr) {
@@ -505,16 +519,14 @@ llvm::Value *CodeGen::VisitUnaryExpr(UnaryExpr *unaryExpr) {
 }
 
 llvm::Value *CodeGen::VisitThreeExpr(ThreeExpr *threeExpr) {
-
     llvm::Value *condVal = threeExpr->condExpr->AcceptVisitor(this);
     llvm::Value *condRet = irBuilder.CreateICmpNE(condVal, irBuilder.getInt32(0));
 
-    BasicBlock *trueBB  = llvm::BasicBlock::Create(llvmContext, "threeExpr_trueBB");
-    BasicBlock *falseBB = llvm::BasicBlock::Create(llvmContext, "threeExpr_falseBB");
-    BasicBlock *lastBB  = llvm::BasicBlock::Create(llvmContext, "threeExpr_lastBB");
+    llvm::BasicBlock *trueBB  = llvm::BasicBlock::Create(llvmContext, "then", currFunc);
+    llvm::BasicBlock *falseBB = llvm::BasicBlock::Create(llvmContext, "els");
+    llvm::BasicBlock *lastBB  = llvm::BasicBlock::Create(llvmContext, "merge");
     irBuilder.CreateCondBr(condRet, trueBB, falseBB);
 
-    trueBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(trueBB);
     llvm::Value *trueVal = threeExpr->trueExpr->AcceptVisitor(this);
     trueBB               = irBuilder.GetInsertBlock();
@@ -528,11 +540,10 @@ llvm::Value *CodeGen::VisitThreeExpr(ThreeExpr *threeExpr) {
 
     lastBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(lastBB);
-    llvm::PHINode *phi = llvm::PHINode::Create(threeExpr->trueExpr->cType->AcceptVisitor(this), 2);
+
+    llvm::PHINode *phi = irBuilder.CreatePHI(threeExpr->trueExpr->cType->AcceptVisitor(this), 2);
     phi->addIncoming(trueVal, trueBB);
     phi->addIncoming(falseVal, falseBB);
-    // lastBB->insertInto(currFunc);
-    // irBuilder.SetInsertPoint(lastBB);
     return phi;
 }
 

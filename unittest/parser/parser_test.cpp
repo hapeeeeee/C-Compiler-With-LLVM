@@ -166,6 +166,12 @@ TEST(ParserTest, three_op) {
     ASSERT_EQ(res, true);
 }
 
+TEST(ParserTest, three_op2) {
+    bool res =
+        TestParserWithContent("{int a=1,b=2,ans;ans=(a==1?(b==2?3:5): 0);}", "{int a=1;int b=2;int ans;ans=a==1?b==2?3:5:0;}");
+    ASSERT_EQ(res, true);
+}
+
 TEST(ParserTest, post_op) {
     bool res = TestParserWithContent("{int a=3;int *p=&a;p++;p--;*p++;*p--;++*p;--*p;}",
                                      "{int a=3;int *p=&a;p++;p--;*p++;*p--;++*p;--*p;}");

@@ -35,8 +35,8 @@ int main(int argc, char *argv[]) {
     Parser parser(lex, sema);
     std::shared_ptr<Program> program = parser.ParserProgram();
 
-    std::string s;
-    llvm::raw_string_ostream ss(s);
+    // std::string s;
+    // llvm::raw_string_ostream ss(s);
     // PrintVisitor printVisitor(program, &ss);
     // llvm::outs() << s;
     // std::cout <<

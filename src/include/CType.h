@@ -7,6 +7,7 @@
 
 class CPrimaryType;
 class CPointType;
+class CArrayType;
 
 class TypeVisitor {
   public:
@@ -14,6 +15,7 @@ class TypeVisitor {
     }
     virtual llvm::Type *VisitCPrimaryType(CPrimaryType *ty) = 0;
     virtual llvm::Type *VisitCPointType(CPointType *ty)     = 0;
+    virtual llvm::Type *VisitCArrayType(CArrayType *ty)     = 0;
 };
 
 /// @brief Represents a data type in the C language.
@@ -22,7 +24,7 @@ class TypeVisitor {
 /// specific types such as `int`.
 class CType {
   public:
-    enum class CTypeKind { TY_Int = 0, TY_Point };
+    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array };
 
   public:
     static std::shared_ptr<CType> IntType;
@@ -40,6 +42,10 @@ class CType {
 
     const CTypeKind GetTypeKind() const {
         return kind;
+    }
+
+    const int GetSize() const {
+        return size;
     }
 
   private:
@@ -84,6 +90,34 @@ class CPointType : public CType {
 
   private:
     std::shared_ptr<CType> baseType;
+};
+
+class CArrayType : public CType {
+  public:
+    CArrayType(std::shared_ptr<CType> elementType, int elementCount)
+        : CType(elementType->GetSize() * elementCount, elementType->GetSize(), CTypeKind::TY_Array), elementType(elementType),
+          elementCount(elementCount) {
+    }
+
+    std::shared_ptr<CType> GetElementType() {
+        return elementType;
+    }
+
+    const int GetElementCount() const {
+        return elementCount;
+    }
+
+    llvm::Type *AcceptVisitor(TypeVisitor *v) override {
+        return v->VisitCArrayType(this);
+    }
+
+    static bool classof(const CType *ty) {
+        return ty->GetTypeKind() == CTypeKind::TY_Array;
+    }
+
+  private:
+    std::shared_ptr<CType> elementType;
+    int elementCount;
 };
 
 #endif //_CTYPE_H_

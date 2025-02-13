@@ -36,7 +36,8 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
     }
 }
 
-/// @brief decl-stmt : decl-spec init-declarator-list? ";"
+/// @brief decl-stmt            : decl-spec init-declarator-list? ";"
+//         init-declarator-list : declarator ("=" initializer)? ("," declarator ("=" initializer)?)*
 std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     std::shared_ptr<CType> cTy = ParserDeclSpec();
 
@@ -58,6 +59,7 @@ std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     return declNode;
 }
 
+/// @brief decl-spec : "int"
 std::shared_ptr<CType> Parser::ParserDeclSpec() {
     if (token.tokenTy == TokenType::KW_int) {
         Advance();
@@ -68,18 +70,33 @@ std::shared_ptr<CType> Parser::ParserDeclSpec() {
     return nullptr;
 }
 
-/// @brief Parse `declarator ("=" expr)?`, like `a = 1, *b = 1`
-///        where `declarator : "*"* direct-declarator`
-/// @param baseType
+/// @brief declarator : "*"* direct-declarator
 std::shared_ptr<ASTNode> Parser::ParserDeclarator(std::shared_ptr<CType> baseType) {
     while (token.tokenTy == TokenType::Star) {
         Consume(TokenType::Star);
         baseType = std::make_shared<CPointType>(baseType);
     }
+
+    return ParserDirectDeclarator(baseType);
+}
+
+/// @brief direct-declarator : identifier | "(" declarator ")" | direct-declarator "[" assign-expr "]"
+std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> baseType) {
+    if (token.tokenTy == TokenType::LeftParent) {
+        Consume(TokenType::LeftParent);
+        auto node = ParserDeclarator(baseType);
+        Consume(TokenType::RightParent);
+        return node;
+    }
+
     IsExcept(TokenType::Identifier);
-    Token tmp = token;
-    auto node = sema.SemaVariableDeclNode(baseType, token);
+    Token ident = token;
     Consume(TokenType::Identifier);
+
+    if (token.tokenTy == TokenType::LeftBracket) {
+        baseType = ParserDirectDeclaratorArraySuffix(baseType);
+    }
+    auto node = sema.SemaVariableDeclNode(baseType, ident);
 
     if (token.tokenTy == TokenType::Equal) {
         Advance();
@@ -87,6 +104,20 @@ std::shared_ptr<ASTNode> Parser::ParserDeclarator(std::shared_ptr<CType> baseTyp
         variableDeclNode->initNode     = ParserAssignExpr();
     }
     return node;
+}
+
+/// @brief Parse "[" assign-expr "]"
+std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr<CType> baseType) {
+    if (token.tokenTy != TokenType::LeftBracket) {
+        return nullptr;
+    }
+
+    Consume(TokenType::LeftBracket);
+    IsExcept(TokenType::Number);
+    int count = token.value;
+    Consume(TokenType::Number);
+    Consume(TokenType::RightBracket);
+    return std::make_shared<CArrayType>(ParserDirectDeclaratorArraySuffix(baseType), count);
 }
 
 /// @brief block-stmt : "{" stmt* "}"
@@ -546,6 +577,7 @@ std::shared_ptr<ASTNode> Parser::ParserPrimaryExpr() {
     }
 }
 
+/// @brief like `sizeof(int**[4][3])`
 std::shared_ptr<CType> Parser::ParserType() {
     std::shared_ptr<CType> baseType = nullptr;
     if (token.tokenTy == TokenType::KW_int) {
@@ -558,6 +590,11 @@ std::shared_ptr<CType> Parser::ParserType() {
         baseType = std::make_shared<CPointType>(baseType);
         Consume(TokenType::Star);
     }
+
+    if (token.tokenTy == TokenType::LeftBracket) {
+        baseType = ParserDirectDeclaratorArraySuffix(baseType);
+    }
+
     return baseType;
 }
 

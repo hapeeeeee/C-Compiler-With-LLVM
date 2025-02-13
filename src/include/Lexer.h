@@ -47,6 +47,8 @@ enum class TokenType {
     Percent,             ///< %
     LeftParent,          ///< (
     RightParent,         ///< )
+    LeftBracket,         ///< [
+    RightBracket,        ///< ]
     LeftBrace,           ///< {
     RightBrace,          ///< }
     Comma,               ///< ,
@@ -89,11 +91,7 @@ class Token {
 
     static llvm::StringRef GetSpellingText(TokenType ty);
 
-    void setMember(TokenType tokTy,
-                   const char *pos,
-                   int len,
-                   int val                    = 0,
-                   std::shared_ptr<CType> cTy = nullptr) {
+    void setMember(TokenType tokTy, const char *pos, int len, int val = 0, std::shared_ptr<CType> cTy = nullptr) {
         tokenTy = tokTy;
         value   = val;
         cType   = cTy;
@@ -102,8 +100,7 @@ class Token {
     }
 
     void Dump() {
-        llvm::outs() << "[ " << llvm::StringRef(ptr, length) << ", row = " << row
-                     << ", col = " << col << " ]\n";
+        llvm::outs() << "[ " << llvm::StringRef(ptr, length) << ", row = " << row << ", col = " << col << " ]\n";
     }
 };
 

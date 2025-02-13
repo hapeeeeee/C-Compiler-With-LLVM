@@ -74,6 +74,10 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "(";
     case TokenType::RightParent:
         return ")";
+    case TokenType::LeftBracket:
+        return "[";
+    case TokenType::RightBracket:
+        return "]";
     case TokenType::LeftBrace:
         return "{";
     case TokenType::RightBrace:
@@ -343,6 +347,16 @@ void Lexer::NextToken(Token &tok) {
         }
         case ')': {
             tok.setMember(TokenType::RightParent, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case '[': {
+            tok.setMember(TokenType::LeftBracket, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case ']': {
+            tok.setMember(TokenType::RightBracket, workPtr, 1);
             workPtr++;
             break;
         }

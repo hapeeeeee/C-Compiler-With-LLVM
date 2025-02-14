@@ -192,12 +192,36 @@ TEST(CodeGenTest, unary_dref_assign) {
     ASSERT_EQ(res, true);
 }
 
+TEST(CodeGenTest, array_subscript) {
+    bool res = TestProgramUseJit("{int a[3]; a[0] = 4;a[0];}", 4);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, array_subscript2) {
+    bool res = TestProgramUseJit("{int a[3][5]; a[2][4] = 4;a[2][4];}", 4);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, array_init1) {
+    bool res = TestProgramUseJit("{int a[3] = {1,101}; a[1];}", 101);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, array_init2) {
+    bool res = TestProgramUseJit("{int a[3][4] = {{1,101},{2,6}}; a[1][1];}", 6);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, array_init3) {
+    bool res = TestProgramUseJit("{int a[3][4] = {{1,101},{2,6}}; int (*p)[3][4] = &a; (*p)[1][1];}", 6);
+    ASSERT_EQ(res, true);
+}
 // TEST(CodeGenTest, unary_dec_dref) {
 //     bool res = TestProgramUseJit("{int a = 10, b = 20, *p = &a; *--p;}", 20);
-//     ASSERT_NE(res, true);
+//     ASSERT_EQ(res, true);
 // }
 
 // TEST(CodeGenTest, unary_inc_dref) {
 //     bool res = TestProgramUseJit("{int a = 10, b = 20, *p = &b; *++p;}", 10);
-//     ASSERT_NE(res, true);
+//     ASSERT_EQ(res, true);
 // }

@@ -438,21 +438,6 @@ llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *expr) {
         assert(0);
         return nullptr;
     }
-    // llvm::Type *ty = nullptr;
-    // if (sizeofExpr->sizeofTY) {
-    //     ty = sizeofExpr->sizeofTY->AcceptVisitor(this);
-    // } else {
-    //     ty = sizeofExpr->expr->cType->AcceptVisitor(this);
-    // }
-
-    // if (ty->isPointerTy()) {
-    //     return irBuilder.getInt32(8);
-    // } else if (ty->isIntegerTy()) {
-    //     return irBuilder.getInt32(4);
-    // } else {
-    //     assert(0);
-    //     return nullptr;
-    // }
 }
 
 llvm::Value *CodeGen::VisitUnaryExpr(UnaryExpr *unaryExpr) {
@@ -469,7 +454,7 @@ llvm::Value *CodeGen::VisitUnaryExpr(UnaryExpr *unaryExpr) {
     case UnaryOpCode::Deref: {
         // *p
         llvm::Type *nodeTy = unaryExpr->cType->AcceptVisitor(this);
-        return irBuilder.CreateLoad(nodeTy, llvm::dyn_cast<LoadInst>(val)->getPointerOperand());
+        return irBuilder.CreateLoad(nodeTy, val);
     }
     case UnaryOpCode::Addr: {
         // &p

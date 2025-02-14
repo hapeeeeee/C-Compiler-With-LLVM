@@ -1,7 +1,7 @@
 include(FetchContent)
 FetchContent_Declare(
   googletest
-  URL file:///home/zax/project/CC_LLVM/unittest/googletest-03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+  URL file://$ENV{CMAKE_GEOGLE_TEST_PATH}
 )
 
 # For Windows: Prevent overriding the parent project's compiler/linker settings

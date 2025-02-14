@@ -5,9 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
 # Set LLVM Config
-set(CMAKE_PREFIX_PATH "/home/zax/third-project/llvm-20/llvm-install-dir/lib/cmake/llvm" ${CMAKE_PREFIX_PATH})
+set(CMAKE_PREFIX_PATH  $ENV{CMAKE_LLVM_PREFIX_PATH} ${CMAKE_PREFIX_PATH})
 find_package(LLVM REQUIRED CONFIG)
 
+message(STATUS "CMAKE_LLVM_PREFIX_PATH = $ENV{CMAKE_LLVM_PREFIX_PATH}")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 

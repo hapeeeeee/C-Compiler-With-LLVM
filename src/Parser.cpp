@@ -109,7 +109,7 @@ std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> b
 /// @brief Parse "[" assign-expr "]"
 std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr<CType> baseType) {
     if (token.tokenTy != TokenType::LeftBracket) {
-        return nullptr;
+        return baseType;
     }
 
     Consume(TokenType::LeftBracket);

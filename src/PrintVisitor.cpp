@@ -304,7 +304,7 @@ llvm::Type *PrintVisitor::VisitCPointType(CPointType *ty) {
 }
 
 llvm::Type *PrintVisitor::VisitCArrayType(CArrayType *ty) {
-    *out << ty->GetElementCount() << " ";
+    *out << "[" << ty->GetElementCount() << "]";
     ty->GetElementType()->AcceptVisitor(this);
     return nullptr;
 }

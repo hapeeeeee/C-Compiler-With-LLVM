@@ -567,7 +567,12 @@ llvm::Value *CodeGen::VisitPostDecExpr(PostDecExpr *postDecExpr) {
 }
 
 llvm::Value *CodeGen::VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr) {
-    return nullptr;
+    llvm::Type *elemTy  = postSubscriptExpr->cType->AcceptVisitor(this);
+    llvm::Value *val    = postSubscriptExpr->leftNode->AcceptVisitor(this);
+    llvm::Value *offest = postSubscriptExpr->node->AcceptVisitor(this);
+
+    llvm::Value *addr = irBuilder.CreateInBoundsGEP(elemTy, llvm::dyn_cast<LoadInst>(val)->getPointerOperand(), {offest});
+    return irBuilder.CreateLoad(elemTy, addr);
 }
 
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {
@@ -584,5 +589,6 @@ llvm::Type *CodeGen::VisitCPointType(CPointType *ty) {
 }
 
 llvm::Type *CodeGen::VisitCArrayType(CArrayType *ty) {
-    return nullptr;
+    llvm::Type *elementTy = ty->GetElementType()->AcceptVisitor(this);
+    return llvm::ArrayType::get(elementTy, ty->GetElementCount());
 }

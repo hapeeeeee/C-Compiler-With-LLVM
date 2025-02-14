@@ -53,90 +53,151 @@ bool TestProgramUseJit(llvm::StringRef content, int expectValue) {
 }
 
 TEST(CodeGenTest, assign) {
-    bool res = TestProgramUseJit("{int a; int b=4;a=3;b=5; a= b;}", 5);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a = b;}", 5);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, add_assign) {
-    bool res = TestProgramUseJit("{int a;int b=4;a=3;b=5; a += b;}", 8);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a += b;}", 8);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, sub_assign) {
-    bool res = TestProgramUseJit("{int a;int b=4;a=3;b = 5; a -= b;}", -2);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a -= b;}", -2);
     ASSERT_EQ(res, true);
 }
 
-TEST(CodeGenTest, mut_assign) {
-    bool res = TestProgramUseJit("{int a;int b=4;a= 3;b = 5; a *= b;}", 15);
+TEST(CodeGenTest, mul_assign) {
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a *= b;}", 15);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, div_assign) {
-    bool res = TestProgramUseJit("{int a; int b= 4; a= 3; b = 5; a /= b;}", 0);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a /= b;}", 0);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, mod_assign) {
-    bool res = TestProgramUseJit("{int a;int b=4;a=3;b=5; a %= b;}", 3);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a %= b;}", 3);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, bit_or_assign) {
-    bool res = TestProgramUseJit("{int a; int b=4; a = 3; b = 5; a |= b;}", 7);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a |= b;}", 7);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, bit_and_assign) {
-    bool res = TestProgramUseJit("{int a; int b=4;a=3;b=5; a &= b;}", 1);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a &= b;}", 1);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, bit_xor_assign) {
-    bool res = TestProgramUseJit("{int a; int b=4; a = 3; b = 5; a ^= b;}", 6);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a ^= b;}", 6);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, left_shift_assign) {
-    bool res = TestProgramUseJit("{int a; int b=4; a=3; b = 5; a <<= b;}", 96);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a <<= b;}", 96);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, right_shift_assign) {
-    bool res = TestProgramUseJit("{int a; int b=4; a= 3; b = 5; a >>= b;}", 0);
+    bool res = TestProgramUseJit("{int a; int b = 4; a = 3; b = 5; a >>= b;}", 0);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, three_op1) {
-    bool res = TestProgramUseJit("{int a=1,b=2,ans;ans =(a==1?(b== 2 ?3 : 5): 0);}", 3);
+    bool res = TestProgramUseJit("{int a = 1, b = 2, ans; ans = (a == 1 ? (b == 2 ? 3 : 5) : 0);}", 3);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, three_op2) {
-    bool res = TestProgramUseJit("{int a=10,b= 20,c; c =(a < b)? a : b;}", 10);
+    bool res = TestProgramUseJit("{int a = 10, b = 20, c; c = (a < b) ? a : b;}", 10);
     ASSERT_EQ(res, true);
 }
+
 TEST(CodeGenTest, sizeof_int) {
-    bool res = TestProgramUseJit("{int a= 10; sizeof(int);}", 4);
+    bool res = TestProgramUseJit("{int a = 10; sizeof(int);}", 4);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, sizeof_pointer) {
-    bool res = TestProgramUseJit("{int a =10; sizeof(int*);}", 8);
+    bool res = TestProgramUseJit("{int a = 10; sizeof(int*);}", 8);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, sizeof_unary) {
-    bool res = TestProgramUseJit("{int a =sizeof(a)+ sizeof a;}", 8);
+    bool res = TestProgramUseJit("{int a = 10; sizeof(a) + sizeof a;}", 8);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, unary_positive) {
-    bool res = TestProgramUseJit("{int a=10;+a;}", 10);
+    bool res = TestProgramUseJit("{int a = 10; +a;}", 10);
     ASSERT_EQ(res, true);
 }
 
 TEST(CodeGenTest, unary_negative) {
-    bool res = TestProgramUseJit("{int a=10;-a;}", -10);
+    bool res = TestProgramUseJit("{int a = 10; -a;}", -10);
     ASSERT_EQ(res, true);
 }
+
+TEST(CodeGenTest, unary_logical_not) {
+    bool res = TestProgramUseJit("{int a = 10; !a;}", 0);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, unary_bit_not) {
+    bool res = TestProgramUseJit("{int a = 10; ~a;}", -11);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, unary_addr_dref) {
+    bool res = TestProgramUseJit("{int a = 10; int *p = &a; *p;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, unary_inc) {
+    bool res = TestProgramUseJit("{int a = 10; ++a;}", 11);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, unary_dec) {
+    bool res = TestProgramUseJit("{int a = 10; --a;}", 9);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, post_dec) {
+    bool res = TestProgramUseJit("{int a = 10; a--;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, post_inc) {
+    bool res = TestProgramUseJit("{int a = 10; a++;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, post_inc_dref) {
+    bool res = TestProgramUseJit("{int a = 10, *p = &a; *p++;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, post_dec_dref) {
+    bool res = TestProgramUseJit("{int a = 10, *p = &a; *p--;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, unary_dref_assign) {
+    bool res = TestProgramUseJit("{int a = 10, b = 20, *p = &a; *p = 100; a;}", 100);
+    ASSERT_EQ(res, true);
+}
+
+// TEST(CodeGenTest, unary_dec_dref) {
+//     bool res = TestProgramUseJit("{int a = 10, b = 20, *p = &a; *--p;}", 20);
+//     ASSERT_NE(res, true);
+// }
+
+// TEST(CodeGenTest, unary_inc_dref) {
+//     bool res = TestProgramUseJit("{int a = 10, b = 20, *p = &b; *++p;}", 10);
+//     ASSERT_NE(res, true);
+// }

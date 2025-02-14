@@ -18,6 +18,7 @@ class BinaryExpr;
 class ThreeExpr;
 class PostIncExpr;
 class PostDecExpr;
+class PostSubscriptExpr;
 class NumberExpr;
 class VariableAssessExpr;
 class DeclStmts;
@@ -51,6 +52,7 @@ class Visitor {
     virtual llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr)                            = 0;
     virtual llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr)                      = 0;
     virtual llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr)                      = 0;
+    virtual llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr)    = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
 };
@@ -81,6 +83,7 @@ class ASTNode {
         ND_ThreeExpr,
         ND_PostIncExpr,
         ND_PostDecExpr,
+        ND_PostSubscript,
         ND_NumberExpr,
         ND_VariableAssessExpr,
         ND_AssignExpr,
@@ -375,6 +378,24 @@ class PostDecExpr : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_PostDecExpr;
+    }
+};
+
+class PostSubscriptExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> leftNode;
+    std::shared_ptr<ASTNode> node;
+
+  public:
+    PostSubscriptExpr() : ASTNode(Nodekind::ND_PostSubscript) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitPostSubscriptExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_PostSubscript;
     }
 };
 

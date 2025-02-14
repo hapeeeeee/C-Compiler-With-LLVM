@@ -539,22 +539,30 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
     return unaryNode;
 }
 
+/// @brief postfix-expr : primary-expr | postfix-expr ("++" | "--")* | postfix-expr "[" expr "]"
 std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
-    auto primaryNode = ParserPrimaryExpr();
+    auto left = ParserPrimaryExpr();
     while (true) {
         if (token.tokenTy == TokenType::PlusPlus) {
-            primaryNode = sema.SemaPostIncExprNode(primaryNode);
+            left = sema.SemaPostIncExprNode(left);
             Consume(TokenType::PlusPlus);
             continue;
         }
         if (token.tokenTy == TokenType::MinusMinus) {
-            primaryNode = sema.SemaPostDecExprNode(primaryNode);
+            left = sema.SemaPostDecExprNode(left);
             Consume(TokenType::MinusMinus);
+            continue;
+        }
+        if (token.tokenTy == TokenType::LeftBracket) {
+            Token tmp = token;
+            Consume(TokenType::LeftBracket);
+            left = sema.SemaPostSubscriptExprNode(left, ParserExpr(), tmp);
+            Consume(TokenType::RightBracket);
             continue;
         }
         break;
     }
-    return primaryNode;
+    return left;
 }
 
 /// @brief primary-expr : identifier | number | "(" expr")"

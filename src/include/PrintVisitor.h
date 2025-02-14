@@ -23,11 +23,13 @@ class PrintVisitor : public Visitor, public TypeVisitor {
     llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr) override;
     llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr) override;
     llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr) override;
+    llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
 
     llvm::Type *VisitCPrimaryType(CPrimaryType *ty) override;
     llvm::Type *VisitCPointType(CPointType *ty) override;
+    llvm::Type *VisitCArrayType(CArrayType *ty) override;
 };
 
 #endif // _PRINTVISITOR_H_

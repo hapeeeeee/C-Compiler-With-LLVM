@@ -581,6 +581,10 @@ llvm::Value *CodeGen::VisitPostDecExpr(PostDecExpr *postDecExpr) {
     }
 }
 
+llvm::Value *CodeGen::VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr) {
+    return nullptr;
+}
+
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {
     if (ty->GetTypeKind() == CType::CTypeKind::TY_Int) {
         return irBuilder.getInt32Ty();
@@ -592,4 +596,8 @@ llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {
 llvm::Type *CodeGen::VisitCPointType(CPointType *ty) {
     llvm::Type *baseTy = ty->GetBaseType()->AcceptVisitor(this);
     return llvm::PointerType::getUnqual(baseTy);
+}
+
+llvm::Type *CodeGen::VisitCArrayType(CArrayType *ty) {
+    return nullptr;
 }

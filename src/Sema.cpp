@@ -137,6 +137,29 @@ std::shared_ptr<ASTNode> Sema::SemaPostDecExprNode(std::shared_ptr<ASTNode> left
     return node;
 }
 
+/// a[offest] ::=  (void *)a + (offest * a->elementType->size)
+std::shared_ptr<ASTNode>
+Sema::SemaPostSubscriptExprNode(std::shared_ptr<ASTNode> leftNode, std::shared_ptr<ASTNode> offestNode, Token tok) {
+    CType::CTypeKind leftTyKind = leftNode->cType->GetTypeKind();
+    if (leftTyKind != CType::CTypeKind::TY_Array || leftTyKind != CType::CTypeKind::TY_Point) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "arrry or pointer");
+    }
+
+    auto node      = std::make_shared<PostSubscriptExpr>();
+    node->leftNode = leftNode;
+    node->node     = offestNode;
+
+    if (leftTyKind == CType::CTypeKind::TY_Array) {
+        CArrayType *arrTy = llvm::dyn_cast<CArrayType>(leftNode->cType.get());
+        node->cType       = arrTy->GetElementType();
+    } else {
+        CPointType *PointerTy = llvm::dyn_cast<CPointType>(leftNode->cType.get());
+        node->cType           = PointerTy->GetBaseType();
+    }
+
+    return node;
+}
+
 void Sema::EnterScope() {
     scope.EnterScope();
 }

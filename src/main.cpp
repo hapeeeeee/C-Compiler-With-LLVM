@@ -35,12 +35,12 @@ int main(int argc, char *argv[]) {
     Parser parser(lex, sema);
     std::shared_ptr<Program> program = parser.ParserProgram();
 
-    // std::string s;
-    // llvm::raw_string_ostream ss(s);
-    // PrintVisitor printVisitor(program, &ss);
-    // llvm::outs() << s;
+    std::string s;
+    llvm::raw_string_ostream ss(s);
+    PrintVisitor printVisitor(program, &ss);
+    llvm::outs() << s;
     // std::cout <<
-    CodeGen codeGen(program);
+    // CodeGen codeGen(program);
 
     return 0;
 }

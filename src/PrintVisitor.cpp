@@ -272,6 +272,14 @@ llvm::Value *PrintVisitor::VisitPostDecExpr(PostDecExpr *postDecExpr) {
     return nullptr;
 }
 
+llvm::Value *PrintVisitor::VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr) {
+    postSubscriptExpr->leftNode->AcceptVisitor(this);
+    *out << "[";
+    postSubscriptExpr->node->AcceptVisitor(this);
+    *out << "]";
+    return nullptr;
+}
+
 llvm::Value *PrintVisitor::VisitNumberExpr(NumberExpr *numberExpr) {
     *out << numberExpr->token.value;
     return nullptr;
@@ -292,5 +300,11 @@ llvm::Type *PrintVisitor::VisitCPrimaryType(CPrimaryType *ty) {
 llvm::Type *PrintVisitor::VisitCPointType(CPointType *ty) {
     ty->GetBaseType()->AcceptVisitor(this);
     *out << "*";
+    return nullptr;
+}
+
+llvm::Type *PrintVisitor::VisitCArrayType(CArrayType *ty) {
+    *out << ty->GetElementCount() << " ";
+    ty->GetElementType()->AcceptVisitor(this);
     return nullptr;
 }

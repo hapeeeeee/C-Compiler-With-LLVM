@@ -82,28 +82,48 @@ std::shared_ptr<ASTNode> Parser::ParserDeclarator(std::shared_ptr<CType> baseTyp
 
 /// @brief direct-declarator : identifier | "(" declarator ")" | direct-declarator "[" assign-expr "]"
 std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> baseType) {
+    std::shared_ptr<ASTNode> declNode = nullptr;
     if (token.tokenTy == TokenType::LeftParent) {
+        Token beginTok = token;
+        lexer.SaveState();
+
         Consume(TokenType::LeftParent);
-        auto node = ParserDeclarator(baseType);
+        sema.SetMode(Sema::Mode::Skip);
+        ParserDeclarator(CType::IntType);
         Consume(TokenType::RightParent);
-        return node;
-    }
+        baseType = ParserDirectDeclaratorSuffix(baseType);
 
-    IsExcept(TokenType::Identifier);
-    Token ident = token;
-    Consume(TokenType::Identifier);
+        sema.SetMode(Sema::Mode::Normal);
+        lexer.RestoreState();
+        token = beginTok;
 
-    if (token.tokenTy == TokenType::LeftBracket) {
-        baseType = ParserDirectDeclaratorArraySuffix(baseType);
+        Consume(TokenType::LeftParent);
+        declNode = ParserDeclarator(baseType);
+        Consume(TokenType::RightParent);
+        ParserDirectDeclaratorSuffix(CType::IntType);
+    } else if (token.tokenTy == TokenType::Identifier) {
+        Token ident = token;
+        Consume(TokenType::Identifier);
+        baseType = ParserDirectDeclaratorSuffix(baseType);
+        declNode = sema.SemaVariableDeclNode(baseType, ident);
+    } else {
+        IsExcept(TokenType::Identifier);
     }
-    auto node = sema.SemaVariableDeclNode(baseType, ident);
 
     if (token.tokenTy == TokenType::Equal) {
         Advance();
-        VariableDecl *variableDeclNode = llvm::dyn_cast<VariableDecl>(node.get());
-        variableDeclNode->initNode     = ParserAssignExpr();
+        auto newNode = llvm::dyn_cast<VariableDecl>(declNode.get());
+        std::vector<int> offsetList;
+        ParserInitializer(newNode->initValues, newNode->cType, offsetList, false);
     }
-    return node;
+    return declNode;
+}
+
+std::shared_ptr<CType> Parser::ParserDirectDeclaratorSuffix(std::shared_ptr<CType> baseType) {
+    if (token.tokenTy == TokenType::LeftBracket) {
+        return ParserDirectDeclaratorArraySuffix(baseType);
+    }
+    return baseType;
 }
 
 /// @brief Parse "[" assign-expr "]"
@@ -118,6 +138,46 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr
     Consume(TokenType::Number);
     Consume(TokenType::RightBracket);
     return std::make_shared<CArrayType>(ParserDirectDeclaratorArraySuffix(baseType), count);
+}
+
+/// @brief initializer : assign-expr| "{" initializer (("," initializer)?)* "}"
+bool Parser::ParserInitializer(std::vector<std::shared_ptr<VariableDecl::InitValue>> &initValues,
+                               std::shared_ptr<CType> declTy,
+                               std::vector<int> &offsetList,
+                               bool hasLeftBrace) {
+    if (token.tokenTy == TokenType::RightBrace) {
+        if (!hasLeftBrace) {
+            GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr), diag::error_miss, "{");
+        }
+        return true;
+    }
+
+    if (token.tokenTy == TokenType::LeftBrace) {
+        Consume(TokenType::LeftBrace);
+
+        if (declTy->GetTypeKind() == CType::CTypeKind::TY_Array) {
+            auto arrTy = llvm::dyn_cast<CArrayType>(declTy.get());
+            int size   = arrTy->GetElementCount(); // 2
+            for (int i = 0; i < size; i++) {
+                if (i > 0 && token.tokenTy == TokenType::Comma) {
+                    Consume(TokenType::Comma);
+                }
+                offsetList.push_back(i);
+                bool isEnd = ParserInitializer(initValues, arrTy->GetElementType(), offsetList, true);
+                offsetList.pop_back();
+                if (isEnd) {
+                    break;
+                }
+            }
+        }
+        Consume(TokenType::RightBrace);
+    } else {
+        Token tmp      = token;
+        auto initNode  = ParserAssignExpr();
+        auto initValue = sema.SemaDeclInitValue(initNode, declTy, offsetList, tmp);
+        initValues.push_back(initValue);
+    }
+    return false;
 }
 
 /// @brief block-stmt : "{" stmt* "}"

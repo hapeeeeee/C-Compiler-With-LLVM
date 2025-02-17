@@ -316,9 +316,27 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
     llvm::Value *value = irBuilder.CreateAlloca(ty, nullptr, name);
     varAddrTypeMap.insert({name, {value, ty}});
 
-    if (variableDecl->initNode) {
-        llvm::Value *initVal = variableDecl->initNode->AcceptVisitor(this);
-        irBuilder.CreateStore(initVal, value);
+    if (variableDecl->initValues.size() > 0) {
+        if (variableDecl->initValues.size() == 1) {
+            llvm::Value *initVal = variableDecl->initValues[0]->value->AcceptVisitor(this);
+            irBuilder.CreateStore(initVal, value);
+        } else {
+            if (variableDecl->cType->GetTypeKind() != CType::CTypeKind::TY_Array) {
+                assert(0);
+            }
+            auto arrTy         = llvm::dyn_cast<CArrayType>(variableDecl->cType.get());
+            llvm::Type *elemTy = arrTy->GetElementType()->AcceptVisitor(this);
+            for (const auto &node : variableDecl->initValues) {
+                auto nodeValue = node->value->AcceptVisitor(this);
+                llvm::SmallVector<llvm::Value *> IdxVec;
+                for (const auto &nodeSubIdx : node->offsetList) {
+                    IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+                }
+
+                auto nodePtr = irBuilder.CreateInBoundsGEP(elemTy, value, IdxVec);
+                irBuilder.CreateStore(nodeValue, nodePtr);
+            }
+        }
     }
     return irBuilder.CreateLoad(ty, value);
 }

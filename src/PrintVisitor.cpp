@@ -25,9 +25,18 @@ llvm::Value *PrintVisitor::VisitDeclStmts(DeclStmts *declStmts) {
 llvm::Value *PrintVisitor::VisitVariableDecl(VariableDecl *variableDecl) {
     variableDecl->cType->AcceptVisitor(this);
     *out << llvm::StringRef(variableDecl->token.ptr, variableDecl->token.length);
-    if (variableDecl->initNode) {
+
+    if (variableDecl->initValues.size() > 0) {
         *out << "=";
-        variableDecl->initNode->AcceptVisitor(this);
+    }
+
+    int i = 0, size = variableDecl->initValues.size();
+    for (const auto &node : variableDecl->initValues) {
+        node->value->AcceptVisitor(this);
+        if (i < size - 1) {
+            *out << ",";
+        }
+        ++i;
     }
     return nullptr;
 }

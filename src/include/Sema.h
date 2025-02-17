@@ -13,6 +13,15 @@
 /// and prepares the AST for further compilation stages.
 class Sema {
   public:
+    enum Mode {
+        Normal = 0,
+        Skip,
+    };
+
+  public:
+    Sema(Diagnostics &diager) : diager(diager), mode(Mode::Normal) {
+    }
+
     std::shared_ptr<ASTNode>
     SemaBlockStmtNode(std::shared_ptr<ASTNode> condExpr, std::shared_ptr<ASTNode> thenStmt, std::shared_ptr<ASTNode> elseStmt);
 
@@ -24,9 +33,9 @@ class Sema {
                                              std::shared_ptr<ASTNode> thenNode,
                                              std::shared_ptr<ASTNode> bodyNode);
 
-    Sema(Diagnostics &diager) : diager(diager) {
-    }
     std::shared_ptr<ASTNode> SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok);
+    std::shared_ptr<VariableDecl::InitValue>
+    SemaDeclInitValue(std::shared_ptr<ASTNode> value, std::shared_ptr<CType> declTy, std::vector<int> &offsetList, Token &tok);
 
     std::shared_ptr<ASTNode> SemaAssignExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right, Token tok);
 
@@ -49,10 +58,12 @@ class Sema {
 
     void EnterScope();
     void ExitScope();
+    void SetMode(Mode mode);
 
   private:
     Scope scope;
     Diagnostics &diager;
+    Mode mode;
 };
 
 #endif // _SEMA_H_

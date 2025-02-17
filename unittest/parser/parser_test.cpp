@@ -227,12 +227,12 @@ TEST(ParserTest, sizeof_array3) {
     ASSERT_EQ(res, true);
 }
 
-// TEST(ParserTest, post_arr_1) {
-//     bool res = TestParserWithContent("{int a[3]; a[0] = 4;}", "{[3]int a;a[0]=4;}");
-//     ASSERT_EQ(res, true);
-// }
+TEST(ParserTest, post_arr_1) {
+    bool res = TestParserWithContent("{int a[3]; a[0] = 4;}", "{[3]int a;a[0]=4;}");
+    ASSERT_EQ(res, true);
+}
 
-// TEST(ParserTest, arr_init1) {
-//     bool res = TestParserWithContent("{int a[3]={1,2}; a[0] = 4;}", "{[3]int a=1,2;a[0]=4;}");
-//     ASSERT_EQ(res, true);
-// }
+TEST(ParserTest, arr_init1) {
+    bool res = TestParserWithContent("{int a[3]={1,2}; a[0] = 4;}", "{[3]int a=1,2;a[0]=4;}");
+    ASSERT_EQ(res, true);
+}

@@ -17,4 +17,5 @@ DIAG(error_lvalue, Error, "Required lvalue on the assign operation left side")
 DIAG(unexpect_typename, Error, "Unexcept type name '{0}'")
 DIAG(unsame_typename, Error, "Except Same type")
 DIAG(unexcept_type, Error, "Except '{0}' type")
+DIAG(error_miss, Error, "Miss '{0}'")
 #undef DIAG

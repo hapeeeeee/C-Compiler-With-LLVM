@@ -123,7 +123,14 @@ class DeclStmts : public ASTNode {
 
 class VariableDecl : public ASTNode {
   public:
-    std::shared_ptr<ASTNode> initNode;
+    struct InitValue {
+        std::shared_ptr<ASTNode> value;
+        std::shared_ptr<CType> ty;
+        std::vector<int> offsetList;
+    };
+
+  public:
+    std::vector<std::shared_ptr<InitValue>> initValues;
 
   public:
     VariableDecl() : ASTNode(Nodekind::ND_VariableDecl) {

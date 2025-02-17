@@ -68,18 +68,16 @@ class Parser {
   private:
     std::shared_ptr<ASTNode> ParserStmt();
 
-    // decl-stmt           : decl-spec init-declarator-list? ";"
-    // decl-spec           : "int"
-    // init-declarator-list: declarator ("=" expr)? ("," declarator ("=" expr)?)*
-    // declarator          : "*"* direct-declarator
-    // Parse `decl-stmt`
     std::shared_ptr<ASTNode> ParserDeclStmt();
-    // Parse `decl-spec`
     std::shared_ptr<CType> ParserDeclSpec();
-    // Parse `declarator ("=" expr)?`
     std::shared_ptr<ASTNode> ParserDeclarator(std::shared_ptr<CType> baseType);
     std::shared_ptr<ASTNode> ParserDirectDeclarator(std::shared_ptr<CType> baseType);
+    std::shared_ptr<CType> ParserDirectDeclaratorSuffix(std::shared_ptr<CType> baseType);
     std::shared_ptr<CType> ParserDirectDeclaratorArraySuffix(std::shared_ptr<CType> baseType);
+    bool ParserInitializer(std::vector<std::shared_ptr<VariableDecl::InitValue>> &initValues,
+                           std::shared_ptr<CType> declTy,
+                           std::vector<int> &offsetList,
+                           bool hasLeftBrace);
 
     std::shared_ptr<ASTNode> ParserBlockStmt();
     std::shared_ptr<ASTNode> ParserExprStmt();

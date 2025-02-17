@@ -25,10 +25,13 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
     llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
     // Check is redefined for symbol
     std::shared_ptr<Symbol> symbol = scope.FindVarSymbolInCurrEnv(content);
-    if (symbol) {
+    if (symbol && (mode == Mode::Normal)) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
     }
-    scope.AddSymbol(content, SymbolKind::LocalVariable, cType);
+
+    if (mode == Mode::Normal) {
+        scope.AddSymbol(content, SymbolKind::LocalVariable, cType);
+    }
 
     auto variableDecl   = std::make_shared<VariableDecl>();
     variableDecl->token = tok;
@@ -36,10 +39,23 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
     return variableDecl;
 }
 
+std::shared_ptr<VariableDecl::InitValue>
+Sema::SemaDeclInitValue(std::shared_ptr<ASTNode> value, std::shared_ptr<CType> declTy, std::vector<int> &offsetList, Token &tok) {
+    if (value->cType->GetTypeKind() != declTy->GetTypeKind() && (mode == Mode::Normal)) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_miss, "same type");
+    }
+
+    auto initValue        = std::make_shared<VariableDecl::InitValue>();
+    initValue->value      = value;
+    initValue->ty         = declTy;
+    initValue->offsetList = offsetList;
+    return initValue;
+}
+
 std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindVarSymbol(content);
-    if (!symbol) {
+    if (!symbol && (mode == Mode::Normal)) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_undefined, content);
     }
 
@@ -61,7 +77,7 @@ Sema::SemaThreeExprNode(std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> 
     node->condExpr  = left;
     node->trueExpr  = mid;
     node->falseExpr = right;
-    if (node->trueExpr->cType->GetTypeKind() != node->falseExpr->cType->GetTypeKind()) {
+    if (node->trueExpr->cType->GetTypeKind() != node->falseExpr->cType->GetTypeKind() && (mode == Mode::Normal)) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unsame_typename);
     }
     node->cType = node->trueExpr->cType;
@@ -94,7 +110,7 @@ std::shared_ptr<ASTNode> Sema::SemaUnaryExprNode(UnaryOpCode op, std::shared_ptr
     case UnaryOpCode::Positive:
     case UnaryOpCode::LogicNot:
     case UnaryOpCode::BitNot: {
-        if (expr->cType->GetTypeKind() != CType::CTypeKind::TY_Int) {
+        if (expr->cType->GetTypeKind() != CType::CTypeKind::TY_Int && (mode == Mode::Normal)) {
             diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "int");
         }
         node->cType = expr->cType;
@@ -105,7 +121,7 @@ std::shared_ptr<ASTNode> Sema::SemaUnaryExprNode(UnaryOpCode op, std::shared_ptr
         break;
     }
     case UnaryOpCode::Deref: { ///< type of `*a` should be value of ptr of `a`
-        if (expr->cType->GetTypeKind() != CType::CTypeKind::TY_Point) {
+        if (expr->cType->GetTypeKind() != CType::CTypeKind::TY_Point && (mode == Mode::Normal)) {
             diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "pointer");
         }
         CPointType *pointType = llvm::dyn_cast<CPointType>(expr->cType.get());
@@ -141,7 +157,7 @@ std::shared_ptr<ASTNode> Sema::SemaPostDecExprNode(std::shared_ptr<ASTNode> left
 std::shared_ptr<ASTNode>
 Sema::SemaPostSubscriptExprNode(std::shared_ptr<ASTNode> leftNode, std::shared_ptr<ASTNode> offestNode, Token tok) {
     CType::CTypeKind leftTyKind = leftNode->cType->GetTypeKind();
-    if (leftTyKind != CType::CTypeKind::TY_Array && leftTyKind != CType::CTypeKind::TY_Point) {
+    if (leftTyKind != CType::CTypeKind::TY_Array && leftTyKind != CType::CTypeKind::TY_Point && (mode == Mode::Normal)) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "arrry or pointer");
     }
 
@@ -166,4 +182,8 @@ void Sema::EnterScope() {
 
 void Sema::ExitScope() {
     scope.ExitScope();
+}
+
+void Sema::SetMode(Mode mode) {
+    this->mode = mode;
 }

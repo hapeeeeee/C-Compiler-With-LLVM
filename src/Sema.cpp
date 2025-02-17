@@ -141,7 +141,7 @@ std::shared_ptr<ASTNode> Sema::SemaPostDecExprNode(std::shared_ptr<ASTNode> left
 std::shared_ptr<ASTNode>
 Sema::SemaPostSubscriptExprNode(std::shared_ptr<ASTNode> leftNode, std::shared_ptr<ASTNode> offestNode, Token tok) {
     CType::CTypeKind leftTyKind = leftNode->cType->GetTypeKind();
-    if (leftTyKind != CType::CTypeKind::TY_Array || leftTyKind != CType::CTypeKind::TY_Point) {
+    if (leftTyKind != CType::CTypeKind::TY_Array && leftTyKind != CType::CTypeKind::TY_Point) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "arrry or pointer");
     }
 

@@ -53,8 +53,10 @@ class Sema {
     std::shared_ptr<ASTNode> SemaPostDecExprNode(std::shared_ptr<ASTNode> leftNode);
     std::shared_ptr<ASTNode>
     SemaPostSubscriptExprNode(std::shared_ptr<ASTNode> leftNode, std::shared_ptr<ASTNode> offestNode, Token tok);
-
     std::shared_ptr<ASTNode> SemaNumberExprNode(std::shared_ptr<CType> cType, Token &tok);
+
+    std::shared_ptr<CType> SemaTagDecl(std::vector<Member> &member, TagKind tagKind, Token &tok);
+    std::shared_ptr<CType> SemaTagAccess(Token &tok);
 
     void EnterScope();
     void ExitScope();

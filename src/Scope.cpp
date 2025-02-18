@@ -13,14 +13,14 @@ void Scope::ExitScope() {
     envs.pop_back();
 }
 
-void Scope::AddSymbol(llvm::StringRef name, SymbolKind symbolKind, std::shared_ptr<CType> cType) {
-    auto symbol = std::make_shared<Symbol>(name, symbolKind, cType);
-    envs.back()->variableSymbolTable.insert({name, symbol});
+void Scope::AddObjSymbol(llvm::StringRef name, std::shared_ptr<CType> cType) {
+    auto symbol = std::make_shared<Symbol>(name, SymbolKind::Obj, cType);
+    envs.back()->objSymbolTable.insert({name, symbol});
 }
 
-std::shared_ptr<Symbol> Scope::FindVarSymbol(llvm::StringRef name) {
+std::shared_ptr<Symbol> Scope::FindObjSymbol(llvm::StringRef name) {
     for (auto it = envs.rbegin(); it != envs.rend(); it++) {
-        llvm::StringMap<std::shared_ptr<Symbol>> &table = (*it)->variableSymbolTable;
+        llvm::StringMap<std::shared_ptr<Symbol>> &table = (*it)->objSymbolTable;
         if (table.count(name) > 0) {
             return table[name];
         }
@@ -28,9 +28,32 @@ std::shared_ptr<Symbol> Scope::FindVarSymbol(llvm::StringRef name) {
     return nullptr;
 }
 
-std::shared_ptr<Symbol> Scope::FindVarSymbolInCurrEnv(llvm::StringRef name) {
-    llvm::StringMap<std::shared_ptr<Symbol>> &table = envs.back()->variableSymbolTable;
-    if (table.count(name) >= 1) {
+std::shared_ptr<Symbol> Scope::FindObjSymbolInCurrEnv(llvm::StringRef name) {
+    llvm::StringMap<std::shared_ptr<Symbol>> &table = envs.back()->objSymbolTable;
+    if (table.count(name) > 0) {
+        return table[name];
+    }
+    return nullptr;
+}
+
+void Scope::AddTagSymbol(llvm::StringRef name, std::shared_ptr<CType> cType) {
+    auto symbol = std::make_shared<Symbol>(name, SymbolKind::Tag, cType);
+    envs.back()->tagSymbolTable.insert({name, symbol});
+}
+
+std::shared_ptr<Symbol> Scope::FindTagSymbol(llvm::StringRef name) {
+    for (auto it = envs.rbegin(); it != envs.rend(); it++) {
+        llvm::StringMap<std::shared_ptr<Symbol>> &table = (*it)->tagSymbolTable;
+        if (table.count(name) > 0) {
+            return table[name];
+        }
+    }
+    return nullptr;
+}
+
+std::shared_ptr<Symbol> Scope::FindTagSymbolInCurrEnv(llvm::StringRef name) {
+    llvm::StringMap<std::shared_ptr<Symbol>> &table = envs.back()->tagSymbolTable;
+    if (table.count(name) > 0) {
         return table[name];
     }
     return nullptr;

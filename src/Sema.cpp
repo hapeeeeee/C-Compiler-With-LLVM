@@ -24,13 +24,13 @@ std::shared_ptr<ASTNode> Sema::SemaForStmtNode(std::shared_ptr<ASTNode> initNode
 std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok) {
     llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
     // Check is redefined for symbol
-    std::shared_ptr<Symbol> symbol = scope.FindVarSymbolInCurrEnv(content);
+    std::shared_ptr<Symbol> symbol = scope.FindObjSymbolInCurrEnv(content);
     if (symbol && (mode == Mode::Normal)) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
     }
 
     if (mode == Mode::Normal) {
-        scope.AddSymbol(content, SymbolKind::LocalVariable, cType);
+        scope.AddObjSymbol(content, cType);
     }
 
     auto variableDecl   = std::make_shared<VariableDecl>();
@@ -54,7 +54,7 @@ Sema::SemaDeclInitValue(std::shared_ptr<ASTNode> value, std::shared_ptr<CType> d
 
 std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
-    std::shared_ptr<Symbol> symbol = scope.FindVarSymbol(content);
+    std::shared_ptr<Symbol> symbol = scope.FindObjSymbol(content);
     if (!symbol && (mode == Mode::Normal)) {
         diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_undefined, content);
     }
@@ -174,6 +174,29 @@ Sema::SemaPostSubscriptExprNode(std::shared_ptr<ASTNode> leftNode, std::shared_p
     }
 
     return node;
+}
+
+std::shared_ptr<CType> Sema::SemaTagDecl(std::vector<Member> &members, TagKind tagKind, Token &tok) {
+    llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
+    std::shared_ptr<Symbol> symbol = scope.FindTagSymbolInCurrEnv(content);
+    if (symbol && (mode == Mode::Normal)) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_undefined, content);
+    }
+    auto recordTy = std::make_shared<CRecordType>(content, members, tagKind);
+    if (mode == Mode::Normal) {
+        scope.AddTagSymbol(content, recordTy);
+    }
+    return recordTy;
+}
+
+std::shared_ptr<CType> Sema::SemaTagAccess(Token &tok) {
+    llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
+    std::shared_ptr<Symbol> symbol = scope.FindTagSymbol(content);
+    if (!symbol && (mode == Mode::Normal)) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_undefined, content);
+    }
+
+    return symbol->cType;
 }
 
 void Sema::EnterScope() {

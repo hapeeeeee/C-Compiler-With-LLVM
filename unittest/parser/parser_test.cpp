@@ -236,3 +236,8 @@ TEST(ParserTest, arr_init1) {
     bool res = TestParserWithContent("{int a[3]={1,2}; a[0] = 4;}", "{[3]int a=1,2;a[0]=4;}");
     ASSERT_EQ(res, true);
 }
+
+TEST(ParserTest, struct_1) {
+    bool res = TestParserWithContent("{struct A{int a,b; int *p;}; struct A a; 1;}", "{struct A{int a;int b;int *p;} a;1;}");
+    ASSERT_EQ(res, true);
+}

@@ -54,6 +54,8 @@ enum class TokenType {
     Comma,               ///< ,
     Semi,                ///< ;
     Identifier,          ///< variable name
+    KW_sturct,           ///< struct
+    KW_union,            ///< union
     KW_int,              ///< int
     KW_if,               ///< if
     KW_else,             ///< else

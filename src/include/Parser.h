@@ -70,6 +70,7 @@ class Parser {
 
     std::shared_ptr<ASTNode> ParserDeclStmt();
     std::shared_ptr<CType> ParserDeclSpec();
+    std::shared_ptr<CType> ParserDeclStructOrUnionSpec();
     std::shared_ptr<ASTNode> ParserDeclarator(std::shared_ptr<CType> baseType);
     std::shared_ptr<ASTNode> ParserDirectDeclarator(std::shared_ptr<CType> baseType);
     std::shared_ptr<CType> ParserDirectDeclaratorSuffix(std::shared_ptr<CType> baseType);

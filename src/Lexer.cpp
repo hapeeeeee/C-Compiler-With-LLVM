@@ -86,6 +86,10 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return ",";
     case TokenType::Semi:
         return ";";
+    case TokenType::KW_sturct:
+        return "struct";
+    case TokenType::KW_union:
+        return "union";
     case TokenType::Identifier:
         return "Identifier";
     case TokenType::KW_int:
@@ -428,6 +432,10 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_continue;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "sizeof") {
         tok.tokenTy = TokenType::KW_Sizeof;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "struct") {
+        tok.tokenTy = TokenType::KW_sturct;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "union") {
+        tok.tokenTy = TokenType::KW_union;
     }
 }
 

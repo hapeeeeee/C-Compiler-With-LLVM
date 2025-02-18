@@ -44,6 +44,7 @@ class CodeGen : public Visitor, public TypeVisitor {
     llvm::Type *VisitCPrimaryType(CPrimaryType *ty) override;
     llvm::Type *VisitCPointType(CPointType *ty) override;
     llvm::Type *VisitCArrayType(CArrayType *ty) override;
+    llvm::Type *VisitCRecordType(CRecordType *ty) override;
 
   private:
     llvm::LLVMContext llvmContext;

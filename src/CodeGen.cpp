@@ -610,3 +610,7 @@ llvm::Type *CodeGen::VisitCArrayType(CArrayType *ty) {
     llvm::Type *elementTy = ty->GetElementType()->AcceptVisitor(this);
     return llvm::ArrayType::get(elementTy, ty->GetElementCount());
 }
+
+llvm::Type *CodeGen::VisitCRecordType(CRecordType *ty) {
+    return nullptr;
+}

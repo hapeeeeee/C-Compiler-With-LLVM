@@ -7,7 +7,8 @@
 #include <memory>
 
 enum class SymbolKind {
-    LocalVariable = 0,
+    Obj = 0, ///< Variable/Function
+    Tag,     ///< Struct/Union
 };
 
 /// @brief Represents a symbol in C language.
@@ -27,7 +28,8 @@ class Symbol {
 
 class Env {
   public:
-    llvm::StringMap<std::shared_ptr<Symbol>> variableSymbolTable;
+    llvm::StringMap<std::shared_ptr<Symbol>> objSymbolTable;
+    llvm::StringMap<std::shared_ptr<Symbol>> tagSymbolTable;
 };
 
 /// @brief Represents an environment for managing symbols.
@@ -37,9 +39,13 @@ class Scope {
     Scope();
     void EnterScope();
     void ExitScope();
-    void AddSymbol(llvm::StringRef name, SymbolKind symbolKind, std::shared_ptr<CType> cType);
-    std::shared_ptr<Symbol> FindVarSymbol(llvm::StringRef name);
-    std::shared_ptr<Symbol> FindVarSymbolInCurrEnv(llvm::StringRef name);
+    void AddObjSymbol(llvm::StringRef name, std::shared_ptr<CType> cType);
+    std::shared_ptr<Symbol> FindObjSymbol(llvm::StringRef name);
+    std::shared_ptr<Symbol> FindObjSymbolInCurrEnv(llvm::StringRef name);
+
+    void AddTagSymbol(llvm::StringRef name, std::shared_ptr<CType> cType);
+    std::shared_ptr<Symbol> FindTagSymbol(llvm::StringRef name);
+    std::shared_ptr<Symbol> FindTagSymbolInCurrEnv(llvm::StringRef name);
 
   private:
     std::vector<std::shared_ptr<Env>> envs;

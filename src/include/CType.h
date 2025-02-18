@@ -8,6 +8,7 @@
 class CPrimaryType;
 class CPointType;
 class CArrayType;
+class CRecordType;
 
 class TypeVisitor {
   public:
@@ -16,6 +17,7 @@ class TypeVisitor {
     virtual llvm::Type *VisitCPrimaryType(CPrimaryType *ty) = 0;
     virtual llvm::Type *VisitCPointType(CPointType *ty)     = 0;
     virtual llvm::Type *VisitCArrayType(CArrayType *ty)     = 0;
+    virtual llvm::Type *VisitCRecordType(CRecordType *ty)   = 0;
 };
 
 /// @brief Represents a data type in the C language.
@@ -24,7 +26,7 @@ class TypeVisitor {
 /// specific types such as `int`.
 class CType {
   public:
-    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array };
+    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array, TY_Record };
 
   public:
     static std::shared_ptr<CType> IntType;
@@ -118,6 +120,48 @@ class CArrayType : public CType {
   private:
     std::shared_ptr<CType> elementType;
     int elementCount;
+};
+
+enum TagKind {
+    kSturct = 0,
+    kUnion,
+};
+
+struct Member {
+    std::shared_ptr<CType> cType;
+    llvm::StringRef name;
+};
+
+class CRecordType : public CType {
+  public:
+    CRecordType(llvm::StringRef name, std::vector<Member> members, TagKind tagKind)
+        : CType(0, 0, CTypeKind::TY_Record), name(name), members(members), tagKind(tagKind) {
+    }
+
+    llvm::StringRef GetName() {
+        return name;
+    }
+
+    std::vector<Member> GetMerbers() {
+        return members;
+    }
+
+    TagKind GetTagKind() {
+        return tagKind;
+    }
+
+    llvm::Type *AcceptVisitor(TypeVisitor *v) override {
+        return v->VisitCRecordType(this);
+    }
+
+    static bool classof(const CType *ty) {
+        return ty->GetTypeKind() == CTypeKind::TY_Record;
+    }
+
+  private:
+    llvm::StringRef name;
+    std::vector<Member> members;
+    TagKind tagKind;
 };
 
 #endif //_CTYPE_H_

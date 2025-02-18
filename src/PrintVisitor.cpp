@@ -317,3 +317,19 @@ llvm::Type *PrintVisitor::VisitCArrayType(CArrayType *ty) {
     ty->GetElementType()->AcceptVisitor(this);
     return nullptr;
 }
+
+llvm::Type *PrintVisitor::VisitCRecordType(CRecordType *ty) {
+    if (ty->GetTagKind() == TagKind::kSturct) {
+        *out << "struct ";
+    } else {
+        *out << "union ";
+    }
+    *out << ty->GetName();
+    *out << "{";
+    for (auto &m : ty->GetMerbers()) {
+        m.cType->AcceptVisitor(this);
+        *out << m.name;
+    }
+    *out << "}";
+    return nullptr;
+}

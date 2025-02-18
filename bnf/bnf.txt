@@ -3,7 +3,9 @@ block-stmt                  : "{" stmt* "}"
 stmt                        : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt | break-stmt | continue-stmt
 null-stmt                   : ";"
 decl-stmt                   : decl-spec init-declarator-list? ";"
-decl-spec                   : "int"
+decl-spec                   : "int" | struct-union-spec
+struct-union-spec           : struct-or-union identifier "{" (decl-spec declarator)* "}"
+struct-or-union             : "Struct" | "Union"
 init-declarator-list        : declarator ("=" initializer)? ("," declarator ("=" initializer)?)*  
 declarator                  : "*"* direct-declarator
 direct-declarator           : identifier | direct-declarator "[" assign-expr "]"
@@ -30,7 +32,8 @@ shift-expr                  : add-expr ( ("<<" | ">>") add-expr )*
 add-expr                    : mult-expr ( ("+" | "-") mult-expr)*
 mult-expr                   : unary-expr  ( ("*" | "/" | "%") unary-expr )*
 unary-expr                  : postfix-expr | ("++"|"--"|"&"|"*"|"-"|"~"|"!"|"sizeof") unary-expr | "sizeof" "(" type-name ")"
-postfix-expr                : primary-expr | postfix-expr ("++" | "--")* | postfix-expr "[" expr "]"
+postfix-expr                : primary-expr | postfix-expr ("++" | "--")* | postfix-expr "[" expr "]" 
+                            : | postfix-expr "." identifier | postfix-expr "->" identifier
 type-name                   : decl-spec abstract-declarator?
 abstract-declarator         : "*"* direct-abstract-declarator
 direct-abstract-declarator  : direct-abstract-declarator "[" expr "]"

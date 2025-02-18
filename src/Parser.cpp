@@ -19,7 +19,7 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
     if (token.tokenTy == TokenType::Semi) { ///< null-stmt
         Advance();
         return nullptr;
-    } else if (token.tokenTy == TokenType::KW_int) { ///< decl-stmt
+    } else if (IsTypeName(token.tokenTy)) { ///< decl-stmt
         return ParserDeclStmt();
     } else if (token.tokenTy == TokenType::KW_if) { ///< if-stmt
         return ParserIfStmt();
@@ -64,10 +64,53 @@ std::shared_ptr<CType> Parser::ParserDeclSpec() {
     if (token.tokenTy == TokenType::KW_int) {
         Advance();
         return CType::IntType;
+    } else if (token.tokenTy == TokenType::KW_sturct || token.tokenTy == TokenType::KW_union) {
+        return ParserDeclStructOrUnionSpec();
     }
     GetDiagnostics().Report(
         llvm::SMLoc::getFromPointer(token.ptr), diag::unexpect_typename, llvm::StringRef(token.ptr, token.length));
     return nullptr;
+}
+
+/// @brief struct-union-spec : struct-or-union identifier "{" (decl-spec declarator)* "}"
+std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
+    TagKind tagKind;
+    if (token.tokenTy == TokenType::KW_sturct) {
+        tagKind = TagKind::kSturct;
+    } else if (token.tokenTy == TokenType::KW_union) {
+        tagKind = TagKind::kUnion;
+    } else {
+        assert(0);
+        return nullptr;
+    }
+    Advance();
+    IsExcept(TokenType::Identifier);
+    Token tmp = token;
+    Consume(TokenType::Identifier);
+
+    // sturct A;
+    if (token.tokenTy != TokenType::LeftBrace) {
+        return sema.SemaTagAccess(tmp);
+    }
+
+    // sturct A{int a, b, *p; int **p;};
+    Consume(TokenType::LeftBrace);
+    sema.EnterScope();
+    std::vector<Member> members;
+    while (token.tokenTy != TokenType::RightBrace) {
+        auto node         = ParserDeclStmt();
+        auto declStmtNode = llvm::dyn_cast<DeclStmts>(node.get());
+
+        for (auto &declNode : declStmtNode->nodeVec) {
+            Member m;
+            m.cType = declNode->cType;
+            m.name  = llvm::StringRef(declNode->token.ptr, declNode->token.length);
+            members.push_back(m);
+        }
+    }
+    sema.ExitScope();
+    Consume(TokenType::RightBrace);
+    return sema.SemaTagDecl(members, tagKind, tmp);
 }
 
 /// @brief declarator : "*"* direct-declarator
@@ -186,7 +229,10 @@ std::shared_ptr<ASTNode> Parser::ParserBlockStmt() {
     Consume(TokenType::LeftBrace);
     auto blockStmts = std::make_shared<BlockStmts>();
     while (token.tokenTy != TokenType::RightBrace) {
-        blockStmts->nodeVec.push_back(ParserStmt());
+        auto stmt = ParserStmt();
+        if (stmt) {
+            blockStmts->nodeVec.push_back(stmt);
+        }
     }
     Consume(TokenType::RightBrace);
     sema.ExitScope();
@@ -668,6 +714,8 @@ std::shared_ptr<CType> Parser::ParserType() {
 
 bool Parser::IsTypeName(TokenType ty) {
     if (ty == TokenType::KW_int) {
+        return true;
+    } else if (ty == TokenType::KW_sturct || ty == TokenType::KW_union) {
         return true;
     }
     return false;

@@ -1,1 +1,1 @@
-{int a[3][4] = {{1,101},{2,6}}; int (*p)[3][4] = &a; (*p)[1][1];}
+{struct A{int a,b; int *p;}; struct A a; 1;}

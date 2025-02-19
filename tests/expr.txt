@@ -1,1 +1,1 @@
-{struct A{int a,b; int *p;}; struct A a; 1;}
+{union A{int a,b; int *p;}; union A a; 1;}

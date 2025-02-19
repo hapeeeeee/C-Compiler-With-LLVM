@@ -46,11 +46,15 @@ class CType {
         return kind;
     }
 
+    const int GetAlign() const {
+        return align;
+    }
+
     const int GetSize() const {
         return size;
     }
 
-  private:
+  protected:
     int size;
     int align;
     CTypeKind kind;
@@ -130,13 +134,13 @@ enum TagKind {
 struct Member {
     std::shared_ptr<CType> cType;
     llvm::StringRef name;
+    int memberIdx;
+    int offset;
 };
 
 class CRecordType : public CType {
   public:
-    CRecordType(llvm::StringRef name, std::vector<Member> members, TagKind tagKind)
-        : CType(0, 0, CTypeKind::TY_Record), name(name), members(members), tagKind(tagKind) {
-    }
+    CRecordType(llvm::StringRef name, std::vector<Member> members, TagKind tagKind);
 
     llvm::StringRef GetName() {
         return name;
@@ -148,6 +152,10 @@ class CRecordType : public CType {
 
     TagKind GetTagKind() {
         return tagKind;
+    }
+
+    int GetMaxElemSizeidx() {
+        return maxElemSizeidx;
     }
 
     llvm::Type *AcceptVisitor(TypeVisitor *v) override {
@@ -162,6 +170,11 @@ class CRecordType : public CType {
     llvm::StringRef name;
     std::vector<Member> members;
     TagKind tagKind;
+    int maxElemSizeidx;
+
+  private:
+    void UpdateStructOffest();
+    void UpdateUnionOffest();
 };
 
 #endif //_CTYPE_H_

@@ -32,7 +32,6 @@ llvm::Value *CodeGen::VisitProgram(Program *program) {
 
     irBuilder.CreateRet(lastVal);
     verifyFunction(*mainFunc);
-    // llvmModule->print(llvm::outs(), nullptr);
     if (verifyModule(*llvmModule, &llvm::outs())) {
         llvmModule->print(llvm::outs(), nullptr);
     }
@@ -612,5 +611,19 @@ llvm::Type *CodeGen::VisitCArrayType(CArrayType *ty) {
 }
 
 llvm::Type *CodeGen::VisitCRecordType(CRecordType *ty) {
-    return nullptr;
+    llvm::StructType *structType = llvm::StructType::get(llvmContext);
+    llvm::SmallVector<llvm::Type *> vec;
+    if (ty->GetTagKind() == TagKind::kSturct) {
+        for (auto &m : ty->GetMerbers()) {
+            vec.push_back(m.cType->AcceptVisitor(this));
+        }
+        structType->setBody(vec);
+    } else {
+        auto members = ty->GetMerbers();
+        int idx      = ty->GetMaxElemSizeidx();
+        vec.push_back(members[idx].cType->AcceptVisitor(this));
+        structType->setBody(vec);
+    }
+
+    return structType;
 }

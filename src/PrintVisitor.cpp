@@ -329,7 +329,8 @@ llvm::Type *PrintVisitor::VisitCRecordType(CRecordType *ty) {
     for (auto &m : ty->GetMerbers()) {
         m.cType->AcceptVisitor(this);
         *out << m.name;
+        *out << ";";
     }
-    *out << "}";
+    *out << "} ";
     return nullptr;
 }

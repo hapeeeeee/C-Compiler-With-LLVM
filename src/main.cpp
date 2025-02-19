@@ -48,13 +48,14 @@ int main(int argc, char *argv[]) {
     Parser parser(lex, sema);
     std::shared_ptr<Program> program = parser.ParserProgram();
 
-    std::string s;
-    llvm::raw_string_ostream ss(s);
-    PrintVisitor printVisitor(program, &ss);
-    llvm::outs() << s;
+    // std::string s;
+    // llvm::raw_string_ostream ss(s);
+    // PrintVisitor printVisitor(program, &ss);
+    // llvm::outs() << s;
 
-    // CodeGen codegen(program);
-    // auto &module = codegen.GetModule();
+    CodeGen codegen(program);
+    auto &module = codegen.GetModule();
+    module->print(llvm::outs(), nullptr);
     // {
     //     llvm::EngineBuilder builder(std::move(module));
     //     std::string error;

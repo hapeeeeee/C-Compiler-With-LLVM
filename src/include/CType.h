@@ -146,7 +146,7 @@ class CRecordType : public CType {
         return name;
     }
 
-    std::vector<Member> GetMerbers() {
+    std::vector<Member> &GetMerbers() {
         return members;
     }
 

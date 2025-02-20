@@ -84,6 +84,10 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "}";
     case TokenType::Comma:
         return ",";
+    case TokenType::Dot:
+        return ".";
+    case TokenType::Arrow:
+        return "->";
     case TokenType::Semi:
         return ";";
     case TokenType::KW_sturct:
@@ -116,7 +120,7 @@ Lexer::Lexer(llvm::SourceMgr &mgr, Diagnostics &diag) : mgr(mgr), diager(diag) {
 void Lexer::NextToken(Token &tok) {
     while (IsWhiteSpace(*workPtr) || StartsWith("//") || StartsWith("/*")) {
         if (StartsWith("//")) { // Some Comment
-            while (*workPtr != '\n') {
+            while (*workPtr != '\n' && workPtr < eofPtr) {
                 workPtr++;
             }
             workRow++;
@@ -125,7 +129,7 @@ void Lexer::NextToken(Token &tok) {
 
         if (StartsWith("/*")) { /* Some Comment */
             workPtr += 2;
-            while (workPtr[0] != '*' && workPtr[1] != '/') {
+            while (workPtr[0] != '*' && workPtr[1] != '/' && workPtr < eofPtr) {
                 if (*workPtr == '\n') {
                     workRow++;
                     workRowHeadPtr = workPtr + 1;
@@ -133,6 +137,11 @@ void Lexer::NextToken(Token &tok) {
                 workPtr++;
             }
             workPtr += 2;
+        }
+
+        if (workPtr >= eofPtr) {
+            tok.tokenTy = TokenType::Eof;
+            return;
         }
 
         if (*workPtr == '\n') {
@@ -305,6 +314,9 @@ void Lexer::NextToken(Token &tok) {
             } else if (*workNextPtr == '-') {
                 tok.setMember(TokenType::MinusMinus, workPtr, 2);
                 workPtr += 2;
+            } else if (*workNextPtr == '>') {
+                tok.setMember(TokenType::Arrow, workPtr, 2);
+                workPtr += 2;
             } else {
                 tok.setMember(TokenType::Minus, workPtr, 1);
                 workPtr++;
@@ -376,6 +388,11 @@ void Lexer::NextToken(Token &tok) {
         }
         case ',': {
             tok.setMember(TokenType::Comma, workPtr, 1);
+            workPtr++;
+            break;
+        }
+        case '.': {
+            tok.setMember(TokenType::Dot, workPtr, 1);
             workPtr++;
             break;
         }

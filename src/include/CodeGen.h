@@ -39,6 +39,8 @@ class CodeGen : public Visitor, public TypeVisitor {
     llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr) override;
     llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr) override;
     llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr) override;
+    llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr) override;
+    llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
 
     llvm::Type *VisitCPrimaryType(CPrimaryType *ty) override;

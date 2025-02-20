@@ -666,6 +666,18 @@ std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
             Consume(TokenType::RightBracket);
             continue;
         }
+        if (token.tokenTy == TokenType::Dot) {
+            Consume(TokenType::Dot);
+            left = sema.SemaPostMemberDotNode(left, token);
+            Consume(TokenType::Identifier);
+            continue;
+        }
+        if (token.tokenTy == TokenType::Arrow) {
+            Consume(TokenType::Arrow);
+            left = sema.SemaPostMemberArrowNode(left, token);
+            Consume(TokenType::Identifier);
+            continue;
+        }
         break;
     }
     return left;

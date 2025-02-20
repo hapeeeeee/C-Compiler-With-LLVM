@@ -289,6 +289,18 @@ llvm::Value *PrintVisitor::VisitPostSubscriptExpr(PostSubscriptExpr *postSubscri
     return nullptr;
 }
 
+llvm::Value *PrintVisitor::VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr) {
+    postMemberDotExpr->leftNode->AcceptVisitor(this);
+    *out << "." << postMemberDotExpr->member.name;
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) {
+    postMemberArrowExpr->leftNode->AcceptVisitor(this);
+    *out << "->" << postMemberArrowExpr->member.name;
+    return nullptr;
+}
+
 llvm::Value *PrintVisitor::VisitNumberExpr(NumberExpr *numberExpr) {
     *out << numberExpr->token.value;
     return nullptr;

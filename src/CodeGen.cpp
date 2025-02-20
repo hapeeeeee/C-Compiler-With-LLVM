@@ -592,6 +592,58 @@ llvm::Value *CodeGen::VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExp
     return irBuilder.CreateLoad(elemTy, addr);
 }
 
+llvm::Value *CodeGen::VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr) {
+    // a.b;
+    llvm::Type *leftTy        = postMemberDotExpr->leftNode->cType->AcceptVisitor(this);
+    llvm::Value *baseValue    = postMemberDotExpr->leftNode->AcceptVisitor(this);
+    LoadInst *loadInst        = llvm::dyn_cast<LoadInst>(baseValue);
+    llvm::Value *baseValuePtr = loadInst->getPointerOperand();
+    CRecordType *recordTy     = llvm::dyn_cast<CRecordType>(postMemberDotExpr->leftNode->cType.get());
+
+    llvm::Type *memberType = postMemberDotExpr->member.cType->AcceptVisitor(this);
+    if (recordTy->GetTagKind() == TagKind::kSturct) {
+        // baseValuePtr is a pointer to a structure,
+        // and it can also be viewed as the beginning of an array of structures (like `Struct[1]`).
+        // Therefore, you can access the address of a member by using Struct[0].field.
+        llvm::Value *memberAddr = irBuilder.CreateInBoundsGEP(
+            leftTy, baseValuePtr, {irBuilder.getInt32(0), irBuilder.getInt32(postMemberDotExpr->member.memberIdx)});
+
+        return irBuilder.CreateLoad(memberType, memberAddr);
+    } else {
+        llvm::Value *memberAddr =
+            irBuilder.CreateInBoundsGEP(leftTy, baseValuePtr, {irBuilder.getInt32(0), irBuilder.getInt32(0)});
+        llvm::Value *cast = irBuilder.CreateBitCast(memberAddr, llvm::PointerType::getUnqual(memberType));
+        return irBuilder.CreateLoad(memberType, cast);
+    }
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) {
+    // a->b;
+    CPointType *lefPointerTy = llvm::dyn_cast<CPointType>(postMemberArrowExpr->leftNode->cType.get());
+    llvm::Type *leftTy       = lefPointerTy->GetBaseType()->AcceptVisitor(this);
+
+    llvm::Value *baseValuePtr = postMemberArrowExpr->leftNode->AcceptVisitor(this);
+    CRecordType *recordTy     = llvm::dyn_cast<CRecordType>(lefPointerTy->GetBaseType().get());
+
+    llvm::Type *memberType = postMemberArrowExpr->member.cType->AcceptVisitor(this);
+    if (recordTy->GetTagKind() == TagKind::kSturct) {
+        // baseValuePtr is a pointer to a structure,
+        // and it can also be viewed as the beginning of an array of structures (like `Struct[1]`).
+        // Therefore, you can access the address of a member by using Struct[0].field.
+        llvm::Value *memberAddr = irBuilder.CreateInBoundsGEP(
+            leftTy, baseValuePtr, {irBuilder.getInt32(0), irBuilder.getInt32(postMemberArrowExpr->member.memberIdx)});
+
+        return irBuilder.CreateLoad(memberType, memberAddr);
+    } else {
+        llvm::Value *memberAddr =
+            irBuilder.CreateInBoundsGEP(leftTy, baseValuePtr, {irBuilder.getInt32(0), irBuilder.getInt32(0)});
+        llvm::Value *cast = irBuilder.CreateBitCast(memberAddr, llvm::PointerType::getUnqual(memberType));
+        return irBuilder.CreateLoad(memberType, cast);
+    }
+    return nullptr;
+}
+
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {
     if (ty->GetTypeKind() == CType::CTypeKind::TY_Int) {
         return irBuilder.getInt32Ty();

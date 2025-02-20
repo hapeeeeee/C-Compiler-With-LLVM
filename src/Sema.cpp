@@ -176,6 +176,66 @@ Sema::SemaPostSubscriptExprNode(std::shared_ptr<ASTNode> leftNode, std::shared_p
     return node;
 }
 
+std::shared_ptr<ASTNode> Sema::SemaPostMemberDotNode(std::shared_ptr<ASTNode> leftNode, Token tok) {
+    if (leftNode->cType->GetTypeKind() != CType::CTypeKind::TY_Record) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "Struct or Union");
+    }
+
+    CRecordType *recordTy = llvm::dyn_cast<CRecordType>(leftNode->cType.get());
+
+    auto &members = recordTy->GetMerbers();
+    Member targetMember;
+    bool isFound = false;
+    for (auto &m : members) {
+        if (m.name == llvm::StringRef(tok.ptr, tok.length)) {
+            isFound      = true;
+            targetMember = m;
+            break;
+        }
+    }
+    if (!isFound) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_miss, "this field in Struct or Union");
+    }
+    auto node      = std::make_shared<PostMemberDotExpr>();
+    node->cType    = targetMember.cType;
+    node->token    = tok;
+    node->leftNode = leftNode;
+    node->member   = targetMember;
+    return node;
+}
+
+std::shared_ptr<ASTNode> Sema::SemaPostMemberArrowNode(std::shared_ptr<ASTNode> leftNode, Token tok) {
+    if (leftNode->cType->GetTypeKind() != CType::CTypeKind::TY_Point) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "Pointer Type");
+    }
+
+    CPointType *pointerTy = llvm::dyn_cast<CPointType>(leftNode->cType.get());
+    if (pointerTy->GetBaseType()->GetTypeKind() != CType::CTypeKind::TY_Record) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::unexcept_type, "Struct or Union");
+    }
+
+    CRecordType *recordTy = llvm::dyn_cast<CRecordType>(pointerTy->GetBaseType().get());
+    auto &members         = recordTy->GetMerbers();
+    Member targetMember;
+    bool isFound = false;
+    for (auto &m : members) {
+        if (m.name == llvm::StringRef(tok.ptr, tok.length)) {
+            isFound      = true;
+            targetMember = m;
+            break;
+        }
+    }
+    if (!isFound) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_miss, "this field in Struct or Union");
+    }
+    auto node      = std::make_shared<PostMemberArrowExpr>();
+    node->cType    = targetMember.cType;
+    node->token    = tok;
+    node->leftNode = leftNode;
+    node->member   = targetMember;
+    return node;
+}
+
 std::shared_ptr<CType> Sema::SemaTagDecl(std::vector<Member> &members, TagKind tagKind, Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindTagSymbolInCurrEnv(content);

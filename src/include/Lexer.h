@@ -52,6 +52,8 @@ enum class TokenType {
     LeftBrace,           ///< {
     RightBrace,          ///< }
     Comma,               ///< ,
+    Dot,                 ///< .
+    Arrow,               ///< ->
     Semi,                ///< ;
     Identifier,          ///< variable name
     KW_sturct,           ///< struct

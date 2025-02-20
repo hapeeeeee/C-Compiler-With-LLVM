@@ -19,6 +19,8 @@ class ThreeExpr;
 class PostIncExpr;
 class PostDecExpr;
 class PostSubscriptExpr;
+class PostMemberDotExpr;
+class PostMemberArrowExpr;
 class NumberExpr;
 class VariableAssessExpr;
 class DeclStmts;
@@ -38,23 +40,25 @@ class Visitor {
   public:
     virtual ~Visitor() {
     }
-    virtual llvm::Value *VisitProgram(Program *program)                                  = 0;
-    virtual llvm::Value *VisitDeclStmts(DeclStmts *declStmts)                            = 0;
-    virtual llvm::Value *VisitVariableDecl(VariableDecl *variableDecl)                   = 0;
-    virtual llvm::Value *VisitBlockStmts(BlockStmts *blockStmts)                         = 0;
-    virtual llvm::Value *VisitIfStmt(IfStmt *ifStmt)                                     = 0;
-    virtual llvm::Value *VisitForStmt(ForStmt *forStmt)                                  = 0;
-    virtual llvm::Value *VisitBreakStmt(BreakStmt *breakStmt)                            = 0;
-    virtual llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt)                   = 0;
-    virtual llvm::Value *VisitSizeofExpr(SizeofExpr *sizeofExpr)                         = 0;
-    virtual llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr)                            = 0;
-    virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                         = 0;
-    virtual llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr)                            = 0;
-    virtual llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr)                      = 0;
-    virtual llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr)                      = 0;
-    virtual llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr)    = 0;
-    virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                         = 0;
-    virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) = 0;
+    virtual llvm::Value *VisitProgram(Program *program)                                     = 0;
+    virtual llvm::Value *VisitDeclStmts(DeclStmts *declStmts)                               = 0;
+    virtual llvm::Value *VisitVariableDecl(VariableDecl *variableDecl)                      = 0;
+    virtual llvm::Value *VisitBlockStmts(BlockStmts *blockStmts)                            = 0;
+    virtual llvm::Value *VisitIfStmt(IfStmt *ifStmt)                                        = 0;
+    virtual llvm::Value *VisitForStmt(ForStmt *forStmt)                                     = 0;
+    virtual llvm::Value *VisitBreakStmt(BreakStmt *breakStmt)                               = 0;
+    virtual llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt)                      = 0;
+    virtual llvm::Value *VisitSizeofExpr(SizeofExpr *sizeofExpr)                            = 0;
+    virtual llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr)                               = 0;
+    virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                            = 0;
+    virtual llvm::Value *VisitThreeExpr(ThreeExpr *threeExpr)                               = 0;
+    virtual llvm::Value *VisitPostIncExpr(PostIncExpr *postIncExpr)                         = 0;
+    virtual llvm::Value *VisitPostDecExpr(PostDecExpr *postDecExpr)                         = 0;
+    virtual llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr)       = 0;
+    virtual llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr)       = 0;
+    virtual llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) = 0;
+    virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                            = 0;
+    virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr)    = 0;
 };
 
 class Program {
@@ -83,7 +87,9 @@ class ASTNode {
         ND_ThreeExpr,
         ND_PostIncExpr,
         ND_PostDecExpr,
-        ND_PostSubscript,
+        ND_PostSubscript,   ///< a[b][c]
+        ND_PostMemberDot,   ///< a.b.c
+        ND_PostMemberArrow, ///< a->b->c
         ND_NumberExpr,
         ND_VariableAssessExpr,
         ND_AssignExpr,
@@ -403,6 +409,42 @@ class PostSubscriptExpr : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_PostSubscript;
+    }
+};
+
+class PostMemberDotExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> leftNode;
+    Member member;
+
+  public:
+    PostMemberDotExpr() : ASTNode(Nodekind::ND_PostMemberDot) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitPostMemberDotExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_PostMemberDot;
+    }
+};
+
+class PostMemberArrowExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> leftNode;
+    Member member;
+
+  public:
+    PostMemberArrowExpr() : ASTNode(Nodekind::ND_PostMemberArrow) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitPostMemberArrowExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_PostMemberArrow;
     }
 };
 

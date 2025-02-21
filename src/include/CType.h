@@ -20,6 +20,11 @@ class TypeVisitor {
     virtual llvm::Type *VisitCRecordType(CRecordType *ty)   = 0;
 };
 
+enum TagKind {
+    kSturct = 0,
+    kUnion,
+};
+
 /// @brief Represents a data type in the C language.
 /// @details This class is used to describe C language data types, including their size,
 /// alignment requirements, and kind (e.g., integer types). It provides utilities for defining
@@ -53,6 +58,8 @@ class CType {
     const int GetSize() const {
         return size;
     }
+
+    static llvm::StringRef GenAnonyRecordName(TagKind tagKind);
 
   protected:
     int size;
@@ -124,11 +131,6 @@ class CArrayType : public CType {
   private:
     std::shared_ptr<CType> elementType;
     int elementCount;
-};
-
-enum TagKind {
-    kSturct = 0,
-    kUnion,
 };
 
 struct Member {

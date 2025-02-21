@@ -312,7 +312,10 @@ llvm::Value *CodeGen::VisitNumberExpr(NumberExpr *numberExpr) {
 llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
     llvm::Type *ty = variableDecl->cType->AcceptVisitor(this);
     llvm::StringRef name(variableDecl->token.ptr, variableDecl->token.length);
-    llvm::Value *value = irBuilder.CreateAlloca(ty, nullptr, name);
+
+    // All variable declarations in the function are placed at the beginning of the function.
+    llvm::IRBuilder<> tmp(&currFunc->getEntryBlock(), currFunc->getEntryBlock().begin());
+    llvm::Value *value = tmp.CreateAlloca(ty, nullptr, name);
     varAddrTypeMap.insert({name, {value, ty}});
 
     if (variableDecl->initValues.size() > 0) {
@@ -320,20 +323,41 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
             llvm::Value *initVal = variableDecl->initValues[0]->value->AcceptVisitor(this);
             irBuilder.CreateStore(initVal, value);
         } else {
-            if (variableDecl->cType->GetTypeKind() != CType::CTypeKind::TY_Array) {
-                assert(0);
-            }
-            auto arrTy         = llvm::dyn_cast<CArrayType>(variableDecl->cType.get());
-            llvm::Type *elemTy = arrTy->GetElementType()->AcceptVisitor(this);
-            for (const auto &node : variableDecl->initValues) {
-                auto nodeValue = node->value->AcceptVisitor(this);
-                llvm::SmallVector<llvm::Value *> IdxVec;
-                for (const auto &nodeSubIdx : node->offsetList) {
-                    IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+            if (llvm::ArrayType *arrTy = llvm::dyn_cast<llvm::ArrayType>(ty)) {
+                for (const auto &node : variableDecl->initValues) {
+                    llvm::SmallVector<llvm::Value *> IdxVec;
+                    for (const auto &nodeSubIdx : node->offsetList) {
+                        IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+                    }
+                    auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, value, IdxVec);
+                    auto nodeValue = node->value->AcceptVisitor(this);
+                    irBuilder.CreateStore(nodeValue, nodePtr);
                 }
-
-                auto nodePtr = irBuilder.CreateInBoundsGEP(elemTy, value, IdxVec);
-                irBuilder.CreateStore(nodeValue, nodePtr);
+            } else if (llvm::StructType *arrTy = llvm::dyn_cast<llvm::StructType>(ty)) {
+                CRecordType *recordTy = llvm::dyn_cast<CRecordType>(variableDecl->cType.get());
+                if (recordTy->GetTagKind() == TagKind::kSturct) {
+                    for (const auto &node : variableDecl->initValues) {
+                        llvm::SmallVector<llvm::Value *> IdxVec;
+                        for (const auto &nodeSubIdx : node->offsetList) {
+                            IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+                        }
+                        auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, value, IdxVec);
+                        auto nodeValue = node->value->AcceptVisitor(this);
+                        irBuilder.CreateStore(nodeValue, nodePtr);
+                    }
+                } else {
+                    assert(variableDecl->initValues.size() == 1);
+                    auto node = variableDecl->initValues[0];
+                    llvm::SmallVector<llvm::Value *> IdxVec;
+                    for (const auto &nodeSubIdx : node->offsetList) {
+                        IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+                    }
+                    auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, value, IdxVec);
+                    auto nodeValue = node->value->AcceptVisitor(this);
+                    irBuilder.CreateStore(nodeValue, nodePtr);
+                }
+            } else {
+                assert(0);
             }
         }
     }
@@ -663,7 +687,11 @@ llvm::Type *CodeGen::VisitCArrayType(CArrayType *ty) {
 }
 
 llvm::Type *CodeGen::VisitCRecordType(CRecordType *ty) {
-    llvm::StructType *structType = llvm::StructType::get(llvmContext);
+    llvm::StructType *structType = llvm::StructType::getTypeByName(llvmContext, ty->GetName());
+    if (structType) {
+        return structType;
+    }
+    structType = llvm::StructType::create(llvmContext, ty->GetName());
     llvm::SmallVector<llvm::Type *> vec;
     if (ty->GetTagKind() == TagKind::kSturct) {
         for (auto &m : ty->GetMerbers()) {

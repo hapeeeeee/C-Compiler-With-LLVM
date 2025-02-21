@@ -1,4 +1,1 @@
-//{struct A{int a,b; int *p;} b; struct A *a = &b; a->a = 22; b.a;}
-//{struct A{int a,b; int *p;} b; struct A a; b.a = 22; a.a = 10; a.a += b.a;}
-
- {union A{int a,b; int *p;} b; union A *a = &b; a->a = 10; b.b;}
+{int a[3] = {1,101}; a[1];}

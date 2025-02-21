@@ -216,6 +216,52 @@ TEST(CodeGenTest, array_init3) {
     bool res = TestProgramUseJit("{int a[3][4] = {{1,101},{2,6}}; int (*p)[3][4] = &a; (*p)[1][1];}", 6);
     ASSERT_EQ(res, true);
 }
+
+TEST(CodeGenTest, struct_1) {
+    bool res = TestProgramUseJit("{struct A{int a,b; int *p;} b; struct A *a = &b; b.a = 11; a->a;}", 11);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, union_1) {
+    bool res = TestProgramUseJit("{union A{int a,b; int *p;} b; union A *a = &b; a->a = 10; a->b;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, struct_anony) {
+    bool res =
+        TestProgramUseJit("{struct A {int a,b; int *p; struct {int a; int c;} d;} b; struct A *a = &b; b.d.a = 11; a->d.a;}", 11);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, struct_init1) {
+    bool res = TestProgramUseJit("{struct A {int a,b; int *p; struct {int a; int c;} d;} b = {1,2}; struct A *a = &b; a->b;}", 2);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, struct_init2) {
+    bool res = TestProgramUseJit("{struct A {int a,b; struct {int a; int c;} d;} b = {1,2,{10}}; struct A *a = &b; a->d.a;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, struct_init3) {
+    bool res = TestProgramUseJit("{struct A {int a,b; union {int a; int c;} d;} b = {1,2,{10}}; struct A *a = &b; a->d.c;}", 10);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, union_init4) {
+    bool res = TestProgramUseJit("{union A {int a,b; struct {int a; int c;} d;} b = {1024}; union A *a = &b; a->a;}", 1024);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, union_init5) {
+    bool res = TestProgramUseJit("{union A {int a,b; struct {int a; int c;} d;} b = {1024}; union A *a = &b; a->b;}", 1024);
+    ASSERT_EQ(res, true);
+}
+
+TEST(CodeGenTest, union_init6) {
+    bool res = TestProgramUseJit("{union A {int a,b; struct {int a; int c;} d;} b = {1024}; union A *a = &b; a->d.a;}", 1024);
+    ASSERT_EQ(res, true);
+}
 // TEST(CodeGenTest, unary_dec_dref) {
 //     bool res = TestProgramUseJit("{int a = 10, b = 20, *p = &a; *--p;}", 20);
 //     ASSERT_EQ(res, true);

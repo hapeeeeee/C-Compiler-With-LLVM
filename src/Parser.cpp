@@ -75,6 +75,7 @@ std::shared_ptr<CType> Parser::ParserDeclSpec() {
 /// @brief struct-union-spec : struct-or-union identifier "{" (decl-spec declarator)* "}"
 std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
     TagKind tagKind;
+    Token tmp;
     if (token.tokenTy == TokenType::KW_sturct) {
         tagKind = TagKind::kSturct;
     } else if (token.tokenTy == TokenType::KW_union) {
@@ -84,9 +85,14 @@ std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
         return nullptr;
     }
     Advance();
-    IsExcept(TokenType::Identifier);
-    Token tmp = token;
-    Consume(TokenType::Identifier);
+    bool isAnony = false;
+    if (token.tokenTy == TokenType::LeftBrace) {
+        isAnony = true;
+    } else {
+        IsExcept(TokenType::Identifier);
+        tmp = token;
+        Consume(TokenType::Identifier);
+    }
 
     // sturct A;
     if (token.tokenTy != TokenType::LeftBrace) {
@@ -110,7 +116,11 @@ std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
     }
     sema.ExitScope();
     Consume(TokenType::RightBrace);
-    return sema.SemaTagDecl(members, tagKind, tmp);
+    if (isAnony) {
+        return sema.SemaAnonyTagDecl(members, tagKind);
+    } else {
+        return sema.SemaTagDecl(members, tagKind, tmp);
+    }
 }
 
 /// @brief declarator : "*"* direct-declarator
@@ -156,7 +166,7 @@ std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> b
     if (token.tokenTy == TokenType::Equal) {
         Advance();
         auto newNode = llvm::dyn_cast<VariableDecl>(declNode.get());
-        std::vector<int> offsetList;
+        std::vector<int> offsetList{0};
         ParserInitializer(newNode->initValues, newNode->cType, offsetList, false);
     }
     return declNode;
@@ -210,6 +220,28 @@ bool Parser::ParserInitializer(std::vector<std::shared_ptr<VariableDecl::InitVal
                 offsetList.pop_back();
                 if (isEnd) {
                     break;
+                }
+            }
+        } else if (declTy->GetTypeKind() == CType::CTypeKind::TY_Record) {
+            auto recordTy = llvm::dyn_cast<CRecordType>(declTy.get());
+            auto members  = recordTy->GetMerbers();
+            if (recordTy->GetTagKind() == TagKind::kSturct) {
+                for (int i = 0; i < members.size(); i++) {
+                    if (i > 0 && token.tokenTy == TokenType::Comma) {
+                        Consume(TokenType::Comma);
+                    }
+                    offsetList.push_back(i);
+                    bool isEnd = ParserInitializer(initValues, members[i].cType, offsetList, true);
+                    offsetList.pop_back();
+                    if (isEnd) {
+                        break;
+                    }
+                }
+            } else {
+                if (members.size() > 0) {
+                    offsetList.push_back(0);
+                    ParserInitializer(initValues, members[0].cType, offsetList, true);
+                    offsetList.pop_back();
                 }
             }
         }

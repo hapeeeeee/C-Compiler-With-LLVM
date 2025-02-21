@@ -249,6 +249,15 @@ std::shared_ptr<CType> Sema::SemaTagDecl(std::vector<Member> &members, TagKind t
     return recordTy;
 }
 
+std::shared_ptr<CType> Sema::SemaAnonyTagDecl(std::vector<Member> &members, TagKind tagKind) {
+    llvm::StringRef content = CType::GenAnonyRecordName(tagKind);
+    auto recordTy           = std::make_shared<CRecordType>(content, members, tagKind);
+    if (mode == Mode::Normal) {
+        scope.AddTagSymbol(content, recordTy);
+    }
+    return recordTy;
+}
+
 std::shared_ptr<CType> Sema::SemaTagAccess(Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindTagSymbol(content);

@@ -6,6 +6,21 @@ int RoundUp(int x, int align) {
 
 std::shared_ptr<CType> CType::IntType = std::make_shared<CPrimaryType>(4, 4, CTypeKind::TY_Int);
 
+llvm::StringRef CType::GenAnonyRecordName(TagKind tagKind) {
+    static long long idx = 0;
+    std::string name;
+    if (tagKind == TagKind::kSturct) {
+        name = "_anony_struct_" + std::to_string(idx++) + "_";
+    } else {
+        name = "_anony_union_" + std::to_string(idx++) + "_";
+    }
+
+    char *buf = (char *)malloc(name.size() + 1);
+    memset(buf, 0, name.size() + 1);
+    strcpy(buf, name.data());
+    return llvm::StringRef(buf);
+}
+
 CRecordType::CRecordType(llvm::StringRef name, std::vector<Member> members, TagKind tagKind)
     : CType(0, 0, CTypeKind::TY_Record), name(name), members(members), tagKind(tagKind) {
     if (tagKind == TagKind::kSturct) {

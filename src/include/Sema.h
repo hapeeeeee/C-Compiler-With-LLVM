@@ -59,6 +59,7 @@ class Sema {
     std::shared_ptr<ASTNode> SemaNumberExprNode(std::shared_ptr<CType> cType, Token &tok);
 
     std::shared_ptr<CType> SemaTagDecl(std::vector<Member> &member, TagKind tagKind, Token &tok);
+    std::shared_ptr<CType> SemaAnonyTagDecl(std::vector<Member> &members, TagKind tagKind);
     std::shared_ptr<CType> SemaTagAccess(Token &tok);
 
     void EnterScope();

@@ -12,6 +12,7 @@
 class Program;
 class ASTNode;
 class VariableDecl;
+class FuncDeclStmt;
 class SizeofExpr;
 class UnaryExpr;
 class BinaryExpr;
@@ -21,6 +22,7 @@ class PostDecExpr;
 class PostSubscriptExpr;
 class PostMemberDotExpr;
 class PostMemberArrowExpr;
+class PostFuncCallExpr;
 class NumberExpr;
 class VariableAssessExpr;
 class DeclStmts;
@@ -29,6 +31,7 @@ class IfStmt;
 class ForStmt;
 class BreakStmt;
 class ContinueStmt;
+class ReturnStmt;
 
 /// @brief Base class for the visitor in the Visitor design pattern.
 /// @details This class defines a set of pure virtual functions to visit different nodes of an
@@ -42,12 +45,14 @@ class Visitor {
     }
     virtual llvm::Value *VisitProgram(Program *program)                                     = 0;
     virtual llvm::Value *VisitDeclStmts(DeclStmts *declStmts)                               = 0;
+    virtual llvm::Value *VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt)                      = 0;
     virtual llvm::Value *VisitVariableDecl(VariableDecl *variableDecl)                      = 0;
     virtual llvm::Value *VisitBlockStmts(BlockStmts *blockStmts)                            = 0;
     virtual llvm::Value *VisitIfStmt(IfStmt *ifStmt)                                        = 0;
     virtual llvm::Value *VisitForStmt(ForStmt *forStmt)                                     = 0;
     virtual llvm::Value *VisitBreakStmt(BreakStmt *breakStmt)                               = 0;
     virtual llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt)                      = 0;
+    virtual llvm::Value *VisitReturnStmt(ReturnStmt *returnStmt)                            = 0;
     virtual llvm::Value *VisitSizeofExpr(SizeofExpr *sizeofExpr)                            = 0;
     virtual llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr)                               = 0;
     virtual llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr)                            = 0;
@@ -57,13 +62,14 @@ class Visitor {
     virtual llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr)       = 0;
     virtual llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr)       = 0;
     virtual llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) = 0;
+    virtual llvm::Value *VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr)          = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                            = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr)    = 0;
 };
 
 class Program {
   public:
-    std::shared_ptr<ASTNode> node;
+    std::vector<std::shared_ptr<ASTNode>> externDecls;
 
   public:
     llvm::Value *AcceptVisitor(Visitor *v) {
@@ -75,6 +81,7 @@ class ASTNode {
   public:
     enum Nodekind {
         ND_DeclStmts = 0,
+        ND_FuncDecl,
         ND_BlockStmts,
         ND_VariableDecl,
         ND_IfStmt,
@@ -82,6 +89,7 @@ class ASTNode {
         ND_BreakStmt,
         ND_ContinueStmt,
         ND_SizeofExpr,
+        ND_ReturnStmt,
         ND_UnaryExpr,
         ND_BinaryExpr,
         ND_ThreeExpr,
@@ -90,6 +98,7 @@ class ASTNode {
         ND_PostSubscript,   ///< a[b][c]
         ND_PostMemberDot,   ///< a.b.c
         ND_PostMemberArrow, ///< a->b->c
+        ND_PostFuncCall,
         ND_NumberExpr,
         ND_VariableAssessExpr,
         ND_AssignExpr,
@@ -127,6 +136,23 @@ class DeclStmts : public ASTNode {
     }
 };
 
+class FuncDeclStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> blockStmt{nullptr};
+
+  public:
+    FuncDeclStmt() : ASTNode(Nodekind::ND_FuncDecl) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitFuncDeclStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_FuncDecl;
+    }
+};
+
 class VariableDecl : public ASTNode {
   public:
     struct InitValue {
@@ -136,6 +162,7 @@ class VariableDecl : public ASTNode {
     };
 
   public:
+    bool isGlobal{false};
     std::vector<std::shared_ptr<InitValue>> initValues;
 
   public:
@@ -238,6 +265,23 @@ class ContinueStmt : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_ContinueStmt;
+    }
+};
+
+class ReturnStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> expr{nullptr};
+
+  public:
+    ReturnStmt() : ASTNode(Nodekind::ND_ReturnStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitReturnStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_ReturnStmt;
     }
 };
 
@@ -445,6 +489,24 @@ class PostMemberArrowExpr : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_PostMemberArrow;
+    }
+};
+
+class PostFuncCallExpr : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> leftNode;
+    std::vector<std::shared_ptr<ASTNode>> args;
+
+  public:
+    PostFuncCallExpr() : ASTNode(Nodekind::ND_PostFuncCall) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitPostFuncCallExpr(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_PostFuncCall;
     }
 };
 

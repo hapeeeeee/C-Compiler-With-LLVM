@@ -1,4 +1,6 @@
-prog                        : block-stmt
+prog                        : external-decl+
+external-decl               : func-def | decl-stmt
+func-def                    : decl-spec declarator block-stmt
 block-stmt                  : "{" stmt* "}"
 stmt                        : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt | break-stmt | continue-stmt
 null-stmt                   : ";"
@@ -8,7 +10,8 @@ struct-union-spec           : struct-or-union identifier "{" (decl-spec declarat
 struct-or-union             : "Struct" | "Union"
 init-declarator-list        : declarator ("=" initializer)? ("," declarator ("=" initializer)?)*  
 declarator                  : "*"* direct-declarator
-direct-declarator           : identifier | direct-declarator "[" assign-expr "]"
+direct-declarator           : identifier | direct-declarator "[" assign-expr "]" | direct-declarator "(" para-type-list? ")"
+para-type-list?             : (decl-spec declarator)*
 initializer                 : assign-expr| "{" initializer (("," initializer)?)* "}" 
 
 expr-stmt                   : expr ";"

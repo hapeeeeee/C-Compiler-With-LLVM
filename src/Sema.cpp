@@ -268,6 +268,14 @@ std::shared_ptr<CType> Sema::SemaTagAccess(Token &tok) {
     return symbol->cType;
 }
 
+std::shared_ptr<ASTNode> Sema::SemaFuncDecl(std::shared_ptr<CType> funcTy, std::shared_ptr<ASTNode> blockStmt, Token &tok) {
+    auto funcNode       = std::make_shared<FuncDeclStmt>();
+    funcNode->cType     = funcTy;
+    funcNode->blockStmt = blockStmt;
+    funcNode->token     = tok;
+    return funcNode;
+}
+
 void Sema::EnterScope() {
     scope.EnterScope();
 }

@@ -21,7 +21,7 @@ class Sema {
   public:
     Sema(Diagnostics &diager) : diager(diager), mode(Mode::Normal) {
     }
-
+    std::shared_ptr<ASTNode> SemaFuncDecl(std::shared_ptr<CType> funcTy, std::shared_ptr<ASTNode> blockStmt, Token &tok);
     std::shared_ptr<ASTNode>
     SemaBlockStmtNode(std::shared_ptr<ASTNode> condExpr, std::shared_ptr<ASTNode> thenStmt, std::shared_ptr<ASTNode> elseStmt);
 

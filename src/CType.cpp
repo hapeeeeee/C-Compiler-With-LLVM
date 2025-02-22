@@ -1,4 +1,5 @@
 #include "include/CType.h"
+#include "CType.h"
 
 int RoundUp(int x, int align) {
     return (x + align - 1) & ~(align - 1);
@@ -80,4 +81,8 @@ void CRecordType::UpdateUnionOffest() {
     size           = maxSize;
     align          = maxAlign;
     maxElemSizeidx = maxSizeIdx;
+}
+
+CFuncType::CFuncType(llvm::StringRef name, const std::vector<Param> &params, std::shared_ptr<CType> retTy)
+    : CType(1, 1, CTypeKind::TY_Func), name(name), params(params), retTy(retTy) {
 }

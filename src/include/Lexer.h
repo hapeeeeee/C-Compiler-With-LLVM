@@ -65,6 +65,7 @@ enum class TokenType {
     KW_break,            ///< break
     KW_continue,         ///< continue
     KW_Sizeof,           ///< sizeof
+    KW_return,           ///< return
     Eof                  ///< end of file
 };
 

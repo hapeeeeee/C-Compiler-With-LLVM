@@ -4,14 +4,31 @@ Parser::Parser(Lexer &lex, Sema &sema) : lexer(lex), sema(sema) {
     Advance();
 }
 
-/// @brief prog : block-stmt
+/// @brief prog          : external-decl+
+///        external-decl : func-def | decl-stmt
 std::shared_ptr<Program> Parser::ParserProgram() {
     auto program = std::make_shared<Program>();
-    if (token.tokenTy != TokenType::Eof) {
-        program->node = Parser::ParserBlockStmt();
+    while (token.tokenTy != TokenType::Eof) {
+        if (IsFuncDecl()) {
+            program->externDecls.push_back(ParserFuncDeclStmt());
+        } else {
+            program->externDecls.push_back(ParserDeclStmt());
+        }
     }
     IsExcept(TokenType::Eof);
     return program;
+}
+
+/// @brief func-def : decl-spec declarator block-stmt
+std::shared_ptr<ASTNode> Parser::ParserFuncDeclStmt() {
+    auto baseTy   = ParserDeclSpec();
+    auto declator = ParserDeclarator(baseTy);
+
+    if (token.tokenTy == TokenType::Semi) {
+        return sema.SemaFuncDecl(declator->cType, nullptr, declator->token);
+    } else {
+        return sema.SemaFuncDecl(declator->cType, ParserBlockStmt(), declator->token);
+    }
 }
 
 /// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt  | break-stmt | continue-stmt
@@ -763,6 +780,25 @@ bool Parser::IsTypeName(TokenType ty) {
         return true;
     }
     return false;
+}
+
+bool Parser::IsFuncDecl() {
+    /// ToDo: Global Var
+    sema.SetMode(Sema::Mode::Skip);
+    Token begin = token;
+    lexer.SaveState();
+
+    bool isFunc     = false;
+    auto baseTy     = ParserDeclSpec();
+    auto declarator = ParserDeclarator(baseTy);
+    if (declarator->cType->GetTypeKind() == CType::CTypeKind::TY_Func) {
+        isFunc = true;
+    }
+
+    lexer.RestoreState();
+    token = begin;
+    sema.SetMode(Sema::Mode::Normal);
+    return isFunc;
 }
 
 bool Parser::IsAssignOperation() {

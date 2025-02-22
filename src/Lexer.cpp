@@ -102,6 +102,8 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "Eof";
     case TokenType::KW_Sizeof:
         return "sizeof";
+    case TokenType::KW_return:
+        return "return";
     default:
         llvm::llvm_unreachable_internal();
         break;
@@ -453,6 +455,8 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_sturct;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "union") {
         tok.tokenTy = TokenType::KW_union;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "return") {
+        tok.tokenTy = TokenType::KW_return;
     }
 }
 

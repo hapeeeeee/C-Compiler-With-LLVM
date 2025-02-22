@@ -9,6 +9,7 @@ class CPrimaryType;
 class CPointType;
 class CArrayType;
 class CRecordType;
+class CFuncType;
 
 class TypeVisitor {
   public:
@@ -18,6 +19,7 @@ class TypeVisitor {
     virtual llvm::Type *VisitCPointType(CPointType *ty)     = 0;
     virtual llvm::Type *VisitCArrayType(CArrayType *ty)     = 0;
     virtual llvm::Type *VisitCRecordType(CRecordType *ty)   = 0;
+    virtual llvm::Type *VisitCFuncType(CFuncType *ty)       = 0;
 };
 
 enum TagKind {
@@ -31,7 +33,7 @@ enum TagKind {
 /// specific types such as `int`.
 class CType {
   public:
-    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array, TY_Record };
+    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array, TY_Record, TY_Func };
 
   public:
     static std::shared_ptr<CType> IntType;
@@ -177,6 +179,41 @@ class CRecordType : public CType {
   private:
     void UpdateStructOffest();
     void UpdateUnionOffest();
+};
+
+struct Param {
+    std::shared_ptr<CType> ty;
+    llvm::StringRef name;
+};
+
+class CFuncType : public CType {
+  public:
+    CFuncType(llvm::StringRef name, const std::vector<Param> &params, std::shared_ptr<CType> retTy);
+
+    llvm::StringRef GetName() {
+        return name;
+    }
+
+    std::vector<Param> GetParams() {
+        return params;
+    }
+
+    std::shared_ptr<CType> GetRetTy() {
+        return retTy;
+    }
+
+    llvm::Type *AcceptVisitor(TypeVisitor *v) override {
+        return v->VisitCFuncType(this);
+    }
+
+    static bool classof(const CType *ty) {
+        return ty->GetTypeKind() == CTypeKind::TY_Func;
+    }
+
+  private:
+    llvm::StringRef name;
+    std::vector<Param> params;
+    std::shared_ptr<CType> retTy;
 };
 
 #endif //_CTYPE_H_

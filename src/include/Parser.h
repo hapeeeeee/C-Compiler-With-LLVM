@@ -66,6 +66,8 @@ class Parser {
     std::vector<std::shared_ptr<ASTNode>> nodesContainContinue; ///< AST nodes for loop statements containing continue statements
 
   private:
+    std::shared_ptr<ASTNode> ParserFuncDeclStmt();
+
     std::shared_ptr<ASTNode> ParserStmt();
 
     std::shared_ptr<ASTNode> ParserDeclStmt();
@@ -109,6 +111,7 @@ class Parser {
   private:
     /// @brief Checks if the type name
     bool IsTypeName(TokenType ty);
+    bool IsFuncDecl();
 
     bool IsAssignOperation();
     bool IsUnaryOperation();

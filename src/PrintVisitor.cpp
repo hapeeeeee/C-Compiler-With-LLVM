@@ -1,4 +1,5 @@
 #include "include/PrintVisitor.h"
+#include "PrintVisitor.h"
 #include "llvm/Support/raw_ostream.h"
 
 PrintVisitor::PrintVisitor(std::shared_ptr<Program> program, llvm::raw_ostream *out) : out(out) {
@@ -6,7 +7,33 @@ PrintVisitor::PrintVisitor(std::shared_ptr<Program> program, llvm::raw_ostream *
 }
 
 llvm::Value *PrintVisitor::VisitProgram(Program *program) {
-    program->node->AcceptVisitor(this);
+    for (auto node : program->externDecls) {
+        node->AcceptVisitor(this);
+    }
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
+    funcDeclStmt->cType->AcceptVisitor(this);
+    if (funcDeclStmt->blockStmt) {
+        funcDeclStmt->blockStmt->AcceptVisitor(this);
+    } else {
+        *out << ";";
+    }
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) {
+    postFuncCallExpr->leftNode->AcceptVisitor(this);
+    *out << "(";
+    int i = 0, size = postFuncCallExpr->args.size();
+    for (auto &para : postFuncCallExpr->args) {
+        para->AcceptVisitor(this);
+        if (i++ != size - 1) {
+            *out << ",";
+        }
+    }
+    *out << ")";
     return nullptr;
 }
 
@@ -90,6 +117,14 @@ llvm::Value *PrintVisitor::VisitBreakStmt(BreakStmt *breakStmt) {
 
 llvm::Value *PrintVisitor::VisitContinueStmt(ContinueStmt *continueStmtStmt) {
     *out << "continue";
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitReturnStmt(ReturnStmt *returnStmt) {
+    *out << "return ";
+    if (returnStmt->expr) {
+        returnStmt->expr->AcceptVisitor(this);
+    }
     return nullptr;
 }
 
@@ -344,5 +379,21 @@ llvm::Type *PrintVisitor::VisitCRecordType(CRecordType *ty) {
         *out << ";";
     }
     *out << "} ";
+    return nullptr;
+}
+
+llvm::Type *PrintVisitor::VisitCFuncType(CFuncType *ty) {
+    ty->GetRetTy()->AcceptVisitor(this);
+    *out << ty->GetName() << "(";
+
+    int i = 0, size = ty->GetParams().size();
+    for (auto &para : ty->GetParams()) {
+        para.ty->AcceptVisitor(this);
+        *out << para.name;
+        if (i++ != size - 1) {
+            *out << ",";
+        }
+    }
+    *out << ")";
     return nullptr;
 }

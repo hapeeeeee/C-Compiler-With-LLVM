@@ -9,33 +9,9 @@ CodeGen::CodeGen(std::shared_ptr<Program> program) {
 }
 
 llvm::Value *CodeGen::VisitProgram(Program *program) {
-    // `printf` function
-    FunctionType *printfFuncTy =
-        FunctionType::get(irBuilder.getInt32Ty(), {llvm::PointerType::get(irBuilder.getInt8Ty(), 0)}, true);
-    Function *printfFunc = Function::Create(printfFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "printf", llvmModule.get());
-
-    // `main` function
-    FunctionType *mainFuncTy = FunctionType::get(irBuilder.getInt32Ty(), false);
-    Function *mainFunc       = Function::Create(mainFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "main", llvmModule.get());
-    BasicBlock *entryBB      = BasicBlock::Create(llvmContext, "entry", mainFunc);
-    irBuilder.SetInsertPoint(entryBB);
-    currFunc = mainFunc;
-
-    llvm::Value *lastVal;
-    lastVal = program->node->AcceptVisitor(this);
-    // if (lastVal) {
-    //     irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("lastVal: %d\n"), lastVal});
-    // } else {
-    //     irBuilder.CreateCall(printfFunc, {irBuilder.CreateGlobalString("last inst is not expr.\n")});
-    // }
-    // irBuilder.CreateRet(irBuilder.getInt32(0));
-
-    irBuilder.CreateRet(lastVal);
-    verifyFunction(*mainFunc);
-    if (verifyModule(*llvmModule, &llvm::outs())) {
-        llvmModule->print(llvm::outs(), nullptr);
+    for (auto &decl : program->externDecls) {
+        decl->AcceptVisitor(this);
     }
-
     return nullptr;
 }
 
@@ -668,6 +644,31 @@ llvm::Value *CodeGen::VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberAr
     return nullptr;
 }
 
+llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
+    // `main` function
+    FunctionType *mainFuncTy = FunctionType::get(irBuilder.getInt32Ty(), false);
+    Function *mainFunc       = Function::Create(mainFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "main", llvmModule.get());
+    BasicBlock *entryBB      = BasicBlock::Create(llvmContext, "entry", mainFunc);
+    irBuilder.SetInsertPoint(entryBB);
+    currFunc = mainFunc;
+
+    funcDeclStmt->blockStmt->AcceptVisitor(this);
+
+    verifyFunction(*mainFunc);
+    if (verifyModule(*llvmModule, &llvm::outs())) {
+        llvmModule->print(llvm::outs(), nullptr);
+    }
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitReturnStmt(ReturnStmt *returnStmt) {
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) {
+    return nullptr;
+}
+
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {
     if (ty->GetTypeKind() == CType::CTypeKind::TY_Int) {
         return irBuilder.getInt32Ty();
@@ -706,4 +707,8 @@ llvm::Type *CodeGen::VisitCRecordType(CRecordType *ty) {
     }
 
     return structType;
+}
+
+llvm::Type *CodeGen::VisitCFuncType(CFuncType *ty) {
+    return nullptr;
 }

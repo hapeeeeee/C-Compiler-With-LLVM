@@ -42,11 +42,15 @@ class CodeGen : public Visitor, public TypeVisitor {
     llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr) override;
     llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
+    llvm::Value *VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) override;
+    llvm::Value *VisitReturnStmt(ReturnStmt *returnStmt) override;
+    llvm::Value *VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) override;
 
     llvm::Type *VisitCPrimaryType(CPrimaryType *ty) override;
     llvm::Type *VisitCPointType(CPointType *ty) override;
     llvm::Type *VisitCArrayType(CArrayType *ty) override;
     llvm::Type *VisitCRecordType(CRecordType *ty) override;
+    llvm::Type *VisitCFuncType(CFuncType *ty) override;
 
   private:
     llvm::LLVMContext llvmContext;

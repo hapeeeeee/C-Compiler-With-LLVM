@@ -22,6 +22,7 @@ class Sema {
     Sema(Diagnostics &diager) : diager(diager), mode(Mode::Normal) {
     }
     std::shared_ptr<ASTNode> SemaFuncDecl(std::shared_ptr<CType> funcTy, std::shared_ptr<ASTNode> blockStmt, Token &tok);
+    std::shared_ptr<ASTNode> SemaFuncCall(std::shared_ptr<ASTNode> leftNode, std::vector<std::shared_ptr<ASTNode>> &params);
     std::shared_ptr<ASTNode>
     SemaBlockStmtNode(std::shared_ptr<ASTNode> condExpr, std::shared_ptr<ASTNode> thenStmt, std::shared_ptr<ASTNode> elseStmt);
 
@@ -33,7 +34,7 @@ class Sema {
                                              std::shared_ptr<ASTNode> thenNode,
                                              std::shared_ptr<ASTNode> bodyNode);
 
-    std::shared_ptr<ASTNode> SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok);
+    std::shared_ptr<ASTNode> SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok, bool isGlobal);
     std::shared_ptr<VariableDecl::InitValue>
     SemaDeclInitValue(std::shared_ptr<ASTNode> value, std::shared_ptr<CType> declTy, std::vector<int> &offsetList, Token &tok);
 

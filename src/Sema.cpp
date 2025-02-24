@@ -1,4 +1,5 @@
 #include "include/Sema.h"
+#include "Sema.h"
 
 std::shared_ptr<ASTNode>
 Sema::SemaIfStmtNode(std::shared_ptr<ASTNode> condExpr, std::shared_ptr<ASTNode> thenStmt, std::shared_ptr<ASTNode> elseStmt) {
@@ -21,7 +22,7 @@ std::shared_ptr<ASTNode> Sema::SemaForStmtNode(std::shared_ptr<ASTNode> initNode
     return for_stmt;
 }
 
-std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok) {
+std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType, Token &tok, bool isGlobal) {
     llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
     // Check is redefined for symbol
     std::shared_ptr<Symbol> symbol = scope.FindObjSymbolInCurrEnv(content);
@@ -33,9 +34,10 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
         scope.AddObjSymbol(content, cType);
     }
 
-    auto variableDecl   = std::make_shared<VariableDecl>();
-    variableDecl->token = tok;
-    variableDecl->cType = cType;
+    auto variableDecl      = std::make_shared<VariableDecl>();
+    variableDecl->token    = tok;
+    variableDecl->cType    = cType;
+    variableDecl->isGlobal = isGlobal;
     return variableDecl;
 }
 
@@ -274,6 +276,15 @@ std::shared_ptr<ASTNode> Sema::SemaFuncDecl(std::shared_ptr<CType> funcTy, std::
     funcNode->blockStmt = blockStmt;
     funcNode->token     = tok;
     return funcNode;
+}
+
+std::shared_ptr<ASTNode> Sema::SemaFuncCall(std::shared_ptr<ASTNode> leftNode, std::vector<std::shared_ptr<ASTNode>> &params) {
+
+    auto node      = std::make_shared<PostFuncCallExpr>();
+    node->leftNode = leftNode;
+    node->args     = params;
+    node->token    = leftNode->token;
+    return node;
 }
 
 void Sema::EnterScope() {

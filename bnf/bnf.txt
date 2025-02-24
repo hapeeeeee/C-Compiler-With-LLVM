@@ -36,7 +36,8 @@ add-expr                    : mult-expr ( ("+" | "-") mult-expr)*
 mult-expr                   : unary-expr  ( ("*" | "/" | "%") unary-expr )*
 unary-expr                  : postfix-expr | ("++"|"--"|"&"|"*"|"-"|"~"|"!"|"sizeof") unary-expr | "sizeof" "(" type-name ")"
 postfix-expr                : primary-expr | postfix-expr ("++" | "--")* | postfix-expr "[" expr "]" 
-                            : | postfix-expr "." identifier | postfix-expr "->" identifier
+                            : | postfix-expr "." identifier | postfix-expr "->" identifier 
+                            : | postfix-expr "(" assign-epxr ("," assign-epxr) ")"
 type-name                   : decl-spec abstract-declarator?
 abstract-declarator         : "*"* direct-abstract-declarator
 direct-abstract-declarator  : direct-abstract-declarator "[" expr "]"

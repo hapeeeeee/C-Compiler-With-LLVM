@@ -11,12 +11,14 @@ class PrintVisitor : public Visitor, public TypeVisitor {
     PrintVisitor(std::shared_ptr<Program> program, llvm::raw_ostream *out);
     llvm::Value *VisitProgram(Program *program) override;
     llvm::Value *VisitDeclStmts(DeclStmts *declStmts) override;
+    llvm::Value *VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) override;
     llvm::Value *VisitVariableDecl(VariableDecl *variableDecl) override;
     llvm::Value *VisitBlockStmts(BlockStmts *blockStmts) override;
     llvm::Value *VisitIfStmt(IfStmt *ifStmt) override;
     llvm::Value *VisitForStmt(ForStmt *forStmt) override;
     llvm::Value *VisitBreakStmt(BreakStmt *breakStmt) override;
     llvm::Value *VisitContinueStmt(ContinueStmt *continueStmt) override;
+    llvm::Value *VisitReturnStmt(ReturnStmt *returnStmt) override;
     llvm::Value *VisitSizeofExpr(SizeofExpr *sizeofExpr) override;
     llvm::Value *VisitUnaryExpr(UnaryExpr *unaryExpr) override;
     llvm::Value *VisitBinaryExpr(BinaryExpr *binaryExpr) override;
@@ -26,6 +28,7 @@ class PrintVisitor : public Visitor, public TypeVisitor {
     llvm::Value *VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExpr) override;
     llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr) override;
     llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) override;
+    llvm::Value *VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
 
@@ -33,6 +36,7 @@ class PrintVisitor : public Visitor, public TypeVisitor {
     llvm::Type *VisitCPointType(CPointType *ty) override;
     llvm::Type *VisitCArrayType(CArrayType *ty) override;
     llvm::Type *VisitCRecordType(CRecordType *ty) override;
+    llvm::Type *VisitCFuncType(CFuncType *ty) override;
 };
 
 #endif // _PRINTVISITOR_H_

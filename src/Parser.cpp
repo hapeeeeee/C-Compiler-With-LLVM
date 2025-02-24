@@ -12,7 +12,7 @@ std::shared_ptr<Program> Parser::ParserProgram() {
         if (IsFuncDecl()) {
             program->externDecls.push_back(ParserFuncDeclStmt());
         } else {
-            program->externDecls.push_back(ParserDeclStmt());
+            program->externDecls.push_back(ParserDeclStmt(true));
         }
     }
     IsExcept(TokenType::Eof);
@@ -22,7 +22,7 @@ std::shared_ptr<Program> Parser::ParserProgram() {
 /// @brief func-def : decl-spec declarator block-stmt
 std::shared_ptr<ASTNode> Parser::ParserFuncDeclStmt() {
     auto baseTy   = ParserDeclSpec();
-    auto declator = ParserDeclarator(baseTy);
+    auto declator = ParserDeclarator(baseTy, true);
 
     if (token.tokenTy == TokenType::Semi) {
         return sema.SemaFuncDecl(declator->cType, nullptr, declator->token);
@@ -48,6 +48,8 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
         return ParserContinueStmt();
     } else if (token.tokenTy == TokenType::LeftBrace) { ///< block-stmt
         return ParserBlockStmt();
+    } else if (token.tokenTy == TokenType::KW_return) {
+        return ParserReturnStmt();
     } else { ///< expr-stmt
         return ParserExprStmt();
     }
@@ -55,7 +57,7 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
 
 /// @brief decl-stmt            : decl-spec init-declarator-list? ";"
 //         init-declarator-list : declarator ("=" initializer)? ("," declarator ("=" initializer)?)*
-std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
+std::shared_ptr<ASTNode> Parser::ParserDeclStmt(bool isGlobal) {
     std::shared_ptr<CType> cTy = ParserDeclSpec();
 
     // handle null decl stmt, like `int;`
@@ -67,7 +69,7 @@ std::shared_ptr<ASTNode> Parser::ParserDeclStmt() {
     auto declNode = std::make_shared<DeclStmts>();
     // int a = 1, b = 1;
     while (token.tokenTy != TokenType::Semi) {
-        declNode->nodeVec.push_back(ParserDeclarator(cTy));
+        declNode->nodeVec.push_back(ParserDeclarator(cTy, isGlobal));
         if (token.tokenTy == TokenType::Comma) {
             Advance();
         }
@@ -141,17 +143,18 @@ std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
 }
 
 /// @brief declarator : "*"* direct-declarator
-std::shared_ptr<ASTNode> Parser::ParserDeclarator(std::shared_ptr<CType> baseType) {
+std::shared_ptr<ASTNode> Parser::ParserDeclarator(std::shared_ptr<CType> baseType, bool isGlobal) {
     while (token.tokenTy == TokenType::Star) {
         Consume(TokenType::Star);
         baseType = std::make_shared<CPointType>(baseType);
     }
 
-    return ParserDirectDeclarator(baseType);
+    return ParserDirectDeclarator(baseType, isGlobal);
 }
 
 /// @brief direct-declarator : identifier | "(" declarator ")" | direct-declarator "[" assign-expr "]"
-std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> baseType) {
+///                          | direct-declarator "(" para-type-list? ")"
+std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> baseType, bool isGlobal) {
     std::shared_ptr<ASTNode> declNode = nullptr;
     if (token.tokenTy == TokenType::LeftParent) {
         Token beginTok = token;
@@ -159,23 +162,23 @@ std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> b
 
         Consume(TokenType::LeftParent);
         sema.SetMode(Sema::Mode::Skip);
-        ParserDeclarator(CType::IntType);
+        ParserDeclarator(CType::IntType, isGlobal);
         Consume(TokenType::RightParent);
-        baseType = ParserDirectDeclaratorSuffix(baseType);
+        baseType = ParserDirectDeclaratorSuffix(baseType, isGlobal, token);
 
         sema.SetMode(Sema::Mode::Normal);
         lexer.RestoreState();
         token = beginTok;
 
         Consume(TokenType::LeftParent);
-        declNode = ParserDeclarator(baseType);
+        declNode = ParserDeclarator(baseType, isGlobal);
         Consume(TokenType::RightParent);
-        ParserDirectDeclaratorSuffix(CType::IntType);
+        ParserDirectDeclaratorSuffix(CType::IntType, isGlobal, token);
     } else if (token.tokenTy == TokenType::Identifier) {
         Token ident = token;
         Consume(TokenType::Identifier);
-        baseType = ParserDirectDeclaratorSuffix(baseType);
-        declNode = sema.SemaVariableDeclNode(baseType, ident);
+        baseType = ParserDirectDeclaratorSuffix(baseType, isGlobal, ident);
+        declNode = sema.SemaVariableDeclNode(baseType, ident, isGlobal);
     } else {
         IsExcept(TokenType::Identifier);
     }
@@ -189,15 +192,17 @@ std::shared_ptr<ASTNode> Parser::ParserDirectDeclarator(std::shared_ptr<CType> b
     return declNode;
 }
 
-std::shared_ptr<CType> Parser::ParserDirectDeclaratorSuffix(std::shared_ptr<CType> baseType) {
+std::shared_ptr<CType> Parser::ParserDirectDeclaratorSuffix(std::shared_ptr<CType> baseType, bool isGlobal, Token tok) {
     if (token.tokenTy == TokenType::LeftBracket) {
-        return ParserDirectDeclaratorArraySuffix(baseType);
+        return ParserDirectDeclaratorArraySuffix(baseType, isGlobal);
+    } else if (token.tokenTy == TokenType::LeftParent) {
+        return ParserDirectDeclaratorFuncSuffix(baseType, isGlobal, tok);
     }
     return baseType;
 }
 
 /// @brief Parse "[" assign-expr "]"
-std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr<CType> baseType) {
+std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr<CType> baseType, bool isGlobal) {
     if (token.tokenTy != TokenType::LeftBracket) {
         return baseType;
     }
@@ -207,7 +212,28 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr
     int count = token.value;
     Consume(TokenType::Number);
     Consume(TokenType::RightBracket);
-    return std::make_shared<CArrayType>(ParserDirectDeclaratorArraySuffix(baseType), count);
+    return std::make_shared<CArrayType>(ParserDirectDeclaratorArraySuffix(baseType, isGlobal), count);
+}
+
+/// @brief direct-declarator "(" para-type-list? ")"
+std::shared_ptr<CType> Parser::ParserDirectDeclaratorFuncSuffix(std::shared_ptr<CType> baseType, bool isGlobal, Token tok) {
+    Consume(TokenType::LeftParent);
+
+    std::vector<Param> params;
+    while (token.tokenTy != TokenType::RightParent) {
+        if (token.tokenTy == TokenType::Comma) {
+            Consume(TokenType::Comma);
+        }
+        auto baseType = ParserDeclSpec();
+        auto declNode = ParserDeclarator(baseType, false);
+
+        Param p;
+        p.ty   = declNode->cType;
+        p.name = llvm::StringRef(declNode->token.ptr, declNode->token.length);
+        params.push_back(p);
+    }
+    Consume(TokenType::RightParent);
+    return std::make_shared<CFuncType>(llvm::StringRef(tok.ptr, tok.length), params, baseType);
 }
 
 /// @brief initializer : assign-expr| "{" initializer (("," initializer)?)* "}"
@@ -370,6 +396,16 @@ std::shared_ptr<ASTNode> Parser::ParserContinueStmt() {
     Consume(TokenType::Semi);
     auto node        = std::make_shared<ContinueStmt>();
     node->fatherNode = nodesContainContinue.back();
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::ParserReturnStmt() {
+    Consume(TokenType::KW_return);
+    auto node = std::make_shared<ReturnStmt>();
+    if (token.tokenTy != TokenType::Semi) {
+        node->expr = ParserExpr();
+    }
+    Consume(TokenType::Semi);
     return node;
 }
 
@@ -695,6 +731,7 @@ std::shared_ptr<ASTNode> Parser::ParserUnaryExpr() {
 }
 
 /// @brief postfix-expr : primary-expr | postfix-expr ("++" | "--")* | postfix-expr "[" expr "]"
+///                      | postfix-expr "(" assign-epxr ("," assign-epxr) ")"
 std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
     auto left = ParserPrimaryExpr();
     while (true) {
@@ -727,6 +764,19 @@ std::shared_ptr<ASTNode> Parser::ParserPostfixExpr() {
             Consume(TokenType::Identifier);
             continue;
         }
+        if (token.tokenTy == TokenType::LeftParent) {
+            Consume(TokenType::LeftParent);
+            std::vector<std::shared_ptr<ASTNode>> params;
+            while (token.tokenTy != TokenType::RightParent) {
+                if (token.tokenTy == TokenType::Comma) {
+                    Consume(TokenType::Comma);
+                }
+                params.push_back(ParserAssignExpr());
+            }
+            left = sema.SemaFuncCall(left, params);
+            Consume(TokenType::RightParent);
+            continue;
+        }
         break;
     }
     return left;
@@ -754,20 +804,16 @@ std::shared_ptr<ASTNode> Parser::ParserPrimaryExpr() {
 
 /// @brief like `sizeof(int**[4][3])`
 std::shared_ptr<CType> Parser::ParserType() {
-    std::shared_ptr<CType> baseType = nullptr;
-    if (token.tokenTy == TokenType::KW_int) {
-        baseType = CType::IntType;
-    }
+    std::shared_ptr<CType> baseType = ParserDeclSpec();
     assert(baseType);
 
-    Consume(token.tokenTy);
     while (token.tokenTy == TokenType::Star) {
         baseType = std::make_shared<CPointType>(baseType);
         Consume(TokenType::Star);
     }
 
     if (token.tokenTy == TokenType::LeftBracket) {
-        baseType = ParserDirectDeclaratorArraySuffix(baseType);
+        baseType = ParserDirectDeclaratorArraySuffix(baseType, false);
     }
 
     return baseType;
@@ -790,7 +836,7 @@ bool Parser::IsFuncDecl() {
 
     bool isFunc     = false;
     auto baseTy     = ParserDeclSpec();
-    auto declarator = ParserDeclarator(baseTy);
+    auto declarator = ParserDeclarator(baseTy, true);
     if (declarator->cType->GetTypeKind() == CType::CTypeKind::TY_Func) {
         isFunc = true;
     }

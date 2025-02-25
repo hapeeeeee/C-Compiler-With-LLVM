@@ -292,7 +292,7 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
     // All variable declarations in the function are placed at the beginning of the function.
     llvm::IRBuilder<> tmp(&currFunc->getEntryBlock(), currFunc->getEntryBlock().begin());
     llvm::Value *value = tmp.CreateAlloca(ty, nullptr, name);
-    varAddrTypeMap.insert({name, {value, ty}});
+    localVarAddrTypeMap.insert({name, {value, ty}});
 
     if (variableDecl->initValues.size() > 0) {
         if (variableDecl->initValues.size() == 1) {
@@ -434,7 +434,7 @@ llvm::Value *CodeGen::VisitContinueStmt(ContinueStmt *continueStmt) {
 
 llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
     llvm::StringRef name(variableAssessExpr->token.ptr, variableAssessExpr->token.length);
-    std::pair<llvm::Value *, llvm::Type *> pair = varAddrTypeMap[name];
+    std::pair<llvm::Value *, llvm::Type *> pair = localVarAddrTypeMap[name];
     llvm::Value *value                          = pair.first;
     llvm::Type *ty                              = pair.second;
     return irBuilder.CreateLoad(ty, value, name);
@@ -645,16 +645,40 @@ llvm::Value *CodeGen::VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberAr
 }
 
 llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
-    // `main` function
-    FunctionType *mainFuncTy = FunctionType::get(irBuilder.getInt32Ty(), false);
-    Function *mainFunc       = Function::Create(mainFuncTy, GlobalValue::LinkageTypes::ExternalLinkage, "main", llvmModule.get());
-    BasicBlock *entryBB      = BasicBlock::Create(llvmContext, "entry", mainFunc);
+    CFuncType *cFuncTy         = llvm::dyn_cast<CFuncType>(funcDeclStmt->cType.get());
+    llvm::FunctionType *funcTy = llvm::dyn_cast<llvm::FunctionType>(cFuncTy->AcceptVisitor(this));
+    Function *thisFunc =
+        Function::Create(funcTy, GlobalValue::LinkageTypes::ExternalLinkage, cFuncTy->GetName(), llvmModule.get());
+    currFunc = thisFunc;
+
+    AddGlobalVarToMap(cFuncTy->GetName(), thisFunc, funcTy);
+
+    int i              = 0;
+    const auto &params = cFuncTy->GetParams();
+    for (auto &arg : thisFunc->args()) {
+        arg.setName(params[i++].name);
+    }
+
+    if (!funcDeclStmt->blockStmt) {
+        return nullptr;
+    }
+
+    PushScope();
+    // alloc for local var
+    i = 0;
+    for (auto &arg : thisFunc->args()) {
+        auto alloc = irBuilder.CreateAlloca(arg.getType(), nullptr, arg.getName());
+        alloc->setAlignment(llvm::Align(params[i++].ty->GetAlign()));
+        irBuilder.CreateStore(&arg, alloc);
+        AddLocalVarToMap(arg.getName(), alloc, arg.getType());
+    }
+
+    BasicBlock *entryBB = BasicBlock::Create(llvmContext, "entry", thisFunc);
     irBuilder.SetInsertPoint(entryBB);
-    currFunc = mainFunc;
-
     funcDeclStmt->blockStmt->AcceptVisitor(this);
+    PopScope();
 
-    verifyFunction(*mainFunc);
+    verifyFunction(*thisFunc);
     if (verifyModule(*llvmModule, &llvm::outs())) {
         llvmModule->print(llvm::outs(), nullptr);
     }
@@ -662,11 +686,22 @@ llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
 }
 
 llvm::Value *CodeGen::VisitReturnStmt(ReturnStmt *returnStmt) {
-    return nullptr;
+    if (returnStmt->expr) {
+        llvm::Value *retVal = returnStmt->expr->AcceptVisitor(this);
+        return irBuilder.CreateRet(retVal);
+    }
+    return irBuilder.CreateRetVoid();
 }
 
 llvm::Value *CodeGen::VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) {
-    return nullptr;
+    llvm::Value *funcAddr      = postFuncCallExpr->leftNode->AcceptVisitor(this);
+    llvm::FunctionType *funcTy = llvm::dyn_cast<llvm::FunctionType>(postFuncCallExpr->leftNode->cType->AcceptVisitor(this));
+
+    llvm::SmallVector<llvm::Value *> args;
+    for (auto &arg : postFuncCallExpr->args) {
+        args.push_back(arg->AcceptVisitor(this));
+    }
+    return irBuilder.CreateCall(funcTy, funcAddr, args);
 }
 
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {
@@ -710,5 +745,47 @@ llvm::Type *CodeGen::VisitCRecordType(CRecordType *ty) {
 }
 
 llvm::Type *CodeGen::VisitCFuncType(CFuncType *ty) {
-    return nullptr;
+    llvm::Type *retTy = ty->GetRetTy()->AcceptVisitor(this);
+    llvm::SmallVector<llvm::Type *> args;
+    for (auto &arg : ty->GetParams()) {
+        args.push_back(arg.ty->AcceptVisitor(this));
+    }
+    return llvm::FunctionType::get(retTy, args, false);
+}
+
+void CodeGen::PushScope() {
+    localVarAddrTypeMap.emplace_back();
+}
+
+void CodeGen::PopScope() {
+    localVarAddrTypeMap.pop_back();
+}
+
+void CodeGen::ClearVarScope() {
+    localVarAddrTypeMap.clear();
+}
+
+void CodeGen::AddLocalVarToMap(llvm::StringRef name, llvm::Value *addr, llvm::Type *ty) {
+    localVarAddrTypeMap.back().insert({name, {addr, ty}});
+}
+
+void CodeGen::AddGlobalVarToMap(llvm::StringRef name, llvm::Value *addr, llvm::Type *ty) {
+    globalVarAddrTypeMap.insert({name, {addr, ty}});
+}
+
+std::pair<llvm::Value *, llvm::Type *> CodeGen::GetLocalVarByName(llvm::StringRef name) {
+    for (auto it = localVarAddrTypeMap.rbegin(); it != localVarAddrTypeMap.rend(); it++) {
+        if (it->find(name) != it->end()) {
+            return (*it)[name];
+        }
+    }
+    assert(globalVarAddrTypeMap.find(name) != globalVarAddrTypeMap.end());
+    return GetGlobalVarByName(name);
+}
+
+std::pair<llvm::Value *, llvm::Type *> CodeGen::GetGlobalVarByName(llvm::StringRef name) {
+    if (globalVarAddrTypeMap.find(name) != globalVarAddrTypeMap.end()) {
+        return globalVarAddrTypeMap[name];
+    }
+    return {};
 }

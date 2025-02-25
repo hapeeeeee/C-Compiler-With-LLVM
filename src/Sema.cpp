@@ -279,6 +279,13 @@ std::shared_ptr<ASTNode> Sema::SemaFuncDecl(std::shared_ptr<CType> funcTy, std::
 }
 
 std::shared_ptr<ASTNode> Sema::SemaFuncCall(std::shared_ptr<ASTNode> leftNode, std::vector<std::shared_ptr<ASTNode>> &params) {
+    if (leftNode->cType->GetTypeKind() != CType::CTypeKind::TY_Func) {
+        diager.Report(llvm::SMLoc::getFromPointer(leftNode->token.ptr), diag::error_except, "func type");
+    }
+    CFuncType *funcTy = llvm::dyn_cast<CFuncType>(leftNode->cType.get());
+    if (funcTy->GetParams().size() != params.size()) {
+        diager.Report(llvm::SMLoc::getFromPointer(leftNode->token.ptr), diag::error_miss, "args count not match");
+    }
 
     auto node      = std::make_shared<PostFuncCallExpr>();
     node->leftNode = leftNode;

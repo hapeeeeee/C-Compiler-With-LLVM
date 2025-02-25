@@ -217,6 +217,7 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr
 
 /// @brief direct-declarator "(" para-type-list? ")"
 std::shared_ptr<CType> Parser::ParserDirectDeclaratorFuncSuffix(std::shared_ptr<CType> baseType, bool isGlobal, Token tok) {
+    sema.EnterScope();
     Consume(TokenType::LeftParent);
 
     std::vector<Param> params;
@@ -233,6 +234,7 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorFuncSuffix(std::shared_ptr<
         params.push_back(p);
     }
     Consume(TokenType::RightParent);
+    sema.ExitScope();
     return std::make_shared<CFuncType>(llvm::StringRef(tok.ptr, tok.length), params, baseType);
 }
 

@@ -60,7 +60,18 @@ class CodeGen : public Visitor, public TypeVisitor {
 
     llvm::DenseMap<ASTNode *, llvm::BasicBlock *> breakTargetBBs;    ///< Target block for the break statement
     llvm::DenseMap<ASTNode *, llvm::BasicBlock *> continueTargetBBs; ///< Target block for the continue statement
-    llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> varAddrTypeMap;
+    llvm::SmallVector<llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>>> localVarAddrTypeMap; // local var in function
+    llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> globalVarAddrTypeMap;                   // function & global var
+
+  private:
+    void PushScope();
+    void PopScope();
+    void ClearVarScope();
+
+    void AddLocalVarToMap(llvm::StringRef name, llvm::Value *val, llvm::Type *ty);
+    void AddGlobalVarToMap(llvm::StringRef name, llvm::Value *val, llvm::Type *ty);
+    std::pair<llvm::Value *, llvm::Type *> GetLocalVarByName(llvm::StringRef name);
+    std::pair<llvm::Value *, llvm::Type *> GetGlobalVarByName(llvm::StringRef name);
 };
 
 #endif // _CODEGEN_H_

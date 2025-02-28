@@ -70,7 +70,7 @@ class CodeGen : public Visitor, public TypeVisitor {
 
     void AddLocalVarToMap(llvm::StringRef name, llvm::Value *val, llvm::Type *ty);
     void AddGlobalVarToMap(llvm::StringRef name, llvm::Value *val, llvm::Type *ty);
-    std::pair<llvm::Value *, llvm::Type *> GetLocalVarByName(llvm::StringRef name);
+    std::pair<llvm::Value *, llvm::Type *> GetVarByName(llvm::StringRef name);
     std::pair<llvm::Value *, llvm::Type *> GetGlobalVarByName(llvm::StringRef name);
 };
 

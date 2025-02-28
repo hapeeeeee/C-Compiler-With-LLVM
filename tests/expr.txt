@@ -1,1 +1,16 @@
-int main(){int a=3;sizeof a;sizeof (a);sizeof(int);}
+struct { 
+    int a, b; 
+    struct {int d; int a;} c;
+} a = {1,2, {10}}; 
+
+int sum(int n) {
+    int ret = 0;
+    for (int i = 0; i <= n; ++i) {
+        ret += i;
+    }
+    return ret;
+}
+
+int main() {
+    return a.c.d + sum(100);
+}

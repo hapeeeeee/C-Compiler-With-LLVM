@@ -69,6 +69,7 @@ class Visitor {
 
 class Program {
   public:
+    llvm::StringRef fileName;
     std::vector<std::shared_ptr<ASTNode>> externDecls;
 
   public:

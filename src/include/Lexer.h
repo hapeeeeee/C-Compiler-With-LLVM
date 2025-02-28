@@ -124,8 +124,12 @@ class Lexer {
     void SaveState();
     void RestoreState();
     Diagnostics &GetDiagnostics();
+    llvm::StringRef GetFileName() {
+        return fileName;
+    }
 
   private:
+    llvm::StringRef fileName;
     llvm::SourceMgr &mgr;
     Diagnostics &diager;
     struct State {

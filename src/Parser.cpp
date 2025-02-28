@@ -7,7 +7,8 @@ Parser::Parser(Lexer &lex, Sema &sema) : lexer(lex), sema(sema) {
 /// @brief prog          : external-decl+
 ///        external-decl : func-def | decl-stmt
 std::shared_ptr<Program> Parser::ParserProgram() {
-    auto program = std::make_shared<Program>();
+    auto program      = std::make_shared<Program>();
+    program->fileName = lexer.GetFileName();
     while (token.tokenTy != TokenType::Eof) {
         if (IsFuncDecl()) {
             program->externDecls.push_back(ParserFuncDeclStmt());
@@ -21,14 +22,18 @@ std::shared_ptr<Program> Parser::ParserProgram() {
 
 /// @brief func-def : decl-spec declarator block-stmt
 std::shared_ptr<ASTNode> Parser::ParserFuncDeclStmt() {
-    auto baseTy   = ParserDeclSpec();
-    auto declator = ParserDeclarator(baseTy, true);
+    auto baseTy = ParserDeclSpec();
+    sema.EnterScope();
+    auto declator                      = ParserDeclarator(baseTy, true);
+    std::shared_ptr<ASTNode> blockStmt = nullptr;
 
     if (token.tokenTy == TokenType::Semi) {
-        return sema.SemaFuncDecl(declator->cType, nullptr, declator->token);
+        Consume(TokenType::Semi);
     } else {
-        return sema.SemaFuncDecl(declator->cType, ParserBlockStmt(), declator->token);
+        blockStmt = ParserBlockStmt();
     }
+    sema.ExitScope();
+    return sema.SemaFuncDecl(declator->cType, blockStmt, declator->token);
 }
 
 /// @brief stmt : decl-stmt | expr-stmt | null-stmt | if-stmt | block-stmt | for-stmt  | break-stmt | continue-stmt
@@ -217,7 +222,6 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr
 
 /// @brief direct-declarator "(" para-type-list? ")"
 std::shared_ptr<CType> Parser::ParserDirectDeclaratorFuncSuffix(std::shared_ptr<CType> baseType, bool isGlobal, Token tok) {
-    sema.EnterScope();
     Consume(TokenType::LeftParent);
 
     std::vector<Param> params;
@@ -234,7 +238,6 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorFuncSuffix(std::shared_ptr<
         params.push_back(p);
     }
     Consume(TokenType::RightParent);
-    sema.ExitScope();
     return std::make_shared<CFuncType>(llvm::StringRef(tok.ptr, tok.length), params, baseType);
 }
 
@@ -814,9 +817,7 @@ std::shared_ptr<CType> Parser::ParserType() {
         Consume(TokenType::Star);
     }
 
-    if (token.tokenTy == TokenType::LeftBracket) {
-        baseType = ParserDirectDeclaratorArraySuffix(baseType, false);
-    }
+    baseType = ParserDirectDeclaratorSuffix(baseType, false, token);
 
     return baseType;
 }

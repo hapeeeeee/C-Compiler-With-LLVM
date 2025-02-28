@@ -33,7 +33,6 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
     if (mode == Mode::Normal) {
         scope.AddObjSymbol(content, cType);
     }
-
     auto variableDecl      = std::make_shared<VariableDecl>();
     variableDecl->token    = tok;
     variableDecl->cType    = cType;
@@ -271,6 +270,17 @@ std::shared_ptr<CType> Sema::SemaTagAccess(Token &tok) {
 }
 
 std::shared_ptr<ASTNode> Sema::SemaFuncDecl(std::shared_ptr<CType> funcTy, std::shared_ptr<ASTNode> blockStmt, Token &tok) {
+    llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
+    // Check is redefined for symbol
+    std::shared_ptr<Symbol> symbol = scope.FindObjSymbolInCurrEnv(content);
+    if (symbol && blockStmt && (mode == Mode::Normal)) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
+    }
+
+    if (!symbol && mode == Mode::Normal) {
+        scope.AddObjSymbol(content, funcTy);
+    }
+
     auto funcNode       = std::make_shared<FuncDeclStmt>();
     funcNode->cType     = funcTy;
     funcNode->blockStmt = blockStmt;

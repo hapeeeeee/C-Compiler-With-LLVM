@@ -110,7 +110,7 @@ class CPointType : public CType {
 class CArrayType : public CType {
   public:
     CArrayType(std::shared_ptr<CType> elementType, int elementCount)
-        : CType(elementType->GetSize() * elementCount, elementType->GetSize(), CTypeKind::TY_Array), elementType(elementType),
+        : CType(elementType->GetSize() * elementCount, elementType->GetAlign(), CTypeKind::TY_Array), elementType(elementType),
           elementCount(elementCount) {
     }
 

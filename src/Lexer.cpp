@@ -111,7 +111,9 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
 }
 
 Lexer::Lexer(llvm::SourceMgr &mgr, Diagnostics &diag) : mgr(mgr), diager(diag) {
+
     unsigned int id     = mgr.getMainFileID();
+    fileName            = mgr.getMemoryBuffer(id)->getBufferIdentifier();
     llvm::StringRef buf = mgr.getMemoryBuffer(id)->getBuffer();
     workPtr             = buf.begin();
     eofPtr              = buf.end();

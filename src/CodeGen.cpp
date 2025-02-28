@@ -4,7 +4,7 @@
 using namespace llvm;
 
 CodeGen::CodeGen(std::shared_ptr<Program> program) {
-    llvmModule = std::make_unique<Module>("Literal Expr", llvmContext);
+    llvmModule = std::make_unique<Module>(program->fileName, llvmContext);
     VisitProgram(program.get());
 }
 
@@ -289,55 +289,128 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
     llvm::Type *ty = variableDecl->cType->AcceptVisitor(this);
     llvm::StringRef name(variableDecl->token.ptr, variableDecl->token.length);
 
-    // All variable declarations in the function are placed at the beginning of the function.
-    llvm::IRBuilder<> tmp(&currFunc->getEntryBlock(), currFunc->getEntryBlock().begin());
-    llvm::Value *value = tmp.CreateAlloca(ty, nullptr, name);
-    localVarAddrTypeMap.insert({name, {value, ty}});
-
-    if (variableDecl->initValues.size() > 0) {
-        if (variableDecl->initValues.size() == 1) {
-            llvm::Value *initVal = variableDecl->initValues[0]->value->AcceptVisitor(this);
-            irBuilder.CreateStore(initVal, value);
-        } else {
-            if (llvm::ArrayType *arrTy = llvm::dyn_cast<llvm::ArrayType>(ty)) {
-                for (const auto &node : variableDecl->initValues) {
-                    llvm::SmallVector<llvm::Value *> IdxVec;
-                    for (const auto &nodeSubIdx : node->offsetList) {
-                        IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
-                    }
-                    auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, value, IdxVec);
-                    auto nodeValue = node->value->AcceptVisitor(this);
-                    irBuilder.CreateStore(nodeValue, nodePtr);
+    if (variableDecl->isGlobal) {
+        const auto GetGlobalInitValueByOffset =
+            [&](const std::vector<int> &offsetList) -> std::shared_ptr<VariableDecl::InitValue> {
+            auto initValues = variableDecl->initValues;
+            for (const auto &value : initValues) {
+                if (value->offsetList.size() != offsetList.size()) {
+                    continue;
                 }
-            } else if (llvm::StructType *arrTy = llvm::dyn_cast<llvm::StructType>(ty)) {
-                CRecordType *recordTy = llvm::dyn_cast<CRecordType>(variableDecl->cType.get());
-                if (recordTy->GetTagKind() == TagKind::kSturct) {
+
+                bool isEqual = true;
+                int size     = offsetList.size();
+                for (int i = 0; i < size; i++) {
+                    if (offsetList[i] != value->offsetList[i]) {
+                        isEqual = false;
+                        break;
+                    }
+                }
+
+                if (isEqual) {
+                    return value;
+                }
+            }
+            return nullptr;
+        };
+
+        const auto GetGlobalInitValue = [&](llvm::Type *ty, auto &&func, std::vector<int> offsetList) -> llvm::Constant * {
+            if (ty->isIntegerTy()) {
+                auto init = GetGlobalInitValueByOffset(offsetList);
+                if (init) {
+                    return llvm::dyn_cast<llvm::Constant>(init->value->AcceptVisitor(this));
+                }
+                return irBuilder.getInt32(0);
+            } else if (ty->isPointerTy()) {
+                return llvm::ConstantPointerNull::get(llvm::dyn_cast<llvm::PointerType>(ty));
+            } else if (ty->isStructTy()) {
+                llvm::StructType *structTy = llvm::dyn_cast<llvm::StructType>(ty);
+                llvm::SmallVector<llvm::Constant *> fieldVec;
+                int i = 0, size = structTy->getNumElements();
+                for (; i < size; i++) {
+                    offsetList.push_back(i);
+                    llvm::Type *fieldTy            = structTy->getElementType(i);
+                    llvm::Constant *fieldInitValue = func(fieldTy, func, offsetList);
+                    fieldVec.push_back(fieldInitValue);
+                    offsetList.pop_back();
+                }
+                return llvm::ConstantStruct::get(structTy, fieldVec);
+            } else if (ty->isArrayTy()) {
+                llvm::ArrayType *arrTy = llvm::dyn_cast<llvm::ArrayType>(ty);
+                llvm::SmallVector<llvm::Constant *> elemVec;
+                llvm::Type *elemTy = arrTy->getElementType();
+                int i = 0, size = arrTy->getNumElements();
+                for (; i < size; i++) {
+                    offsetList.push_back(i);
+                    llvm::Constant *elemInitValue = func(elemTy, func, offsetList);
+                    elemVec.push_back(elemInitValue);
+                    offsetList.pop_back();
+                }
+                return llvm::ConstantArray::get(arrTy, elemVec);
+            } else {
+                return nullptr;
+            }
+        };
+
+        llvm::GlobalVariable *globalVarAddr =
+            new llvm::GlobalVariable(*llvmModule, ty, false, llvm::GlobalValue::LinkageTypes::ExternalLinkage, nullptr, name);
+        globalVarAddr->setAlignment(llvm::Align(variableDecl->cType->GetAlign()));
+        globalVarAddr->setInitializer(GetGlobalInitValue(ty, GetGlobalInitValue, {0}));
+        AddGlobalVarToMap(name, globalVarAddr, ty);
+        return globalVarAddr;
+    } else {
+        // All local variable declarations in the function are placed at the beginning of the function.
+        llvm::IRBuilder<> tmp(&currFunc->getEntryBlock(), currFunc->getEntryBlock().begin());
+        llvm::AllocaInst *addr = tmp.CreateAlloca(ty, nullptr, name);
+        addr->setAlignment(llvm::Align(variableDecl->cType->GetAlign()));
+
+        AddLocalVarToMap(name, addr, ty);
+
+        if (variableDecl->initValues.size() > 0) {
+            if (variableDecl->initValues.size() == 1) {
+                llvm::Value *initVal = variableDecl->initValues[0]->value->AcceptVisitor(this);
+                irBuilder.CreateStore(initVal, addr);
+            } else {
+                if (llvm::ArrayType *arrTy = llvm::dyn_cast<llvm::ArrayType>(ty)) {
                     for (const auto &node : variableDecl->initValues) {
                         llvm::SmallVector<llvm::Value *> IdxVec;
                         for (const auto &nodeSubIdx : node->offsetList) {
                             IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
                         }
-                        auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, value, IdxVec);
+                        auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, addr, IdxVec);
+                        auto nodeValue = node->value->AcceptVisitor(this);
+                        irBuilder.CreateStore(nodeValue, nodePtr);
+                    }
+                } else if (llvm::StructType *arrTy = llvm::dyn_cast<llvm::StructType>(ty)) {
+                    CRecordType *recordTy = llvm::dyn_cast<CRecordType>(variableDecl->cType.get());
+                    if (recordTy->GetTagKind() == TagKind::kSturct) {
+                        for (const auto &node : variableDecl->initValues) {
+                            llvm::SmallVector<llvm::Value *> IdxVec;
+                            for (const auto &nodeSubIdx : node->offsetList) {
+                                IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+                            }
+                            auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, addr, IdxVec);
+                            auto nodeValue = node->value->AcceptVisitor(this);
+                            irBuilder.CreateStore(nodeValue, nodePtr);
+                        }
+                    } else {
+                        assert(variableDecl->initValues.size() == 1);
+                        auto node = variableDecl->initValues[0];
+                        llvm::SmallVector<llvm::Value *> IdxVec;
+                        for (const auto &nodeSubIdx : node->offsetList) {
+                            IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
+                        }
+                        auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, addr, IdxVec);
                         auto nodeValue = node->value->AcceptVisitor(this);
                         irBuilder.CreateStore(nodeValue, nodePtr);
                     }
                 } else {
-                    assert(variableDecl->initValues.size() == 1);
-                    auto node = variableDecl->initValues[0];
-                    llvm::SmallVector<llvm::Value *> IdxVec;
-                    for (const auto &nodeSubIdx : node->offsetList) {
-                        IdxVec.push_back(irBuilder.getInt32(nodeSubIdx));
-                    }
-                    auto nodePtr   = irBuilder.CreateInBoundsGEP(ty, value, IdxVec);
-                    auto nodeValue = node->value->AcceptVisitor(this);
-                    irBuilder.CreateStore(nodeValue, nodePtr);
+                    assert(0);
                 }
-            } else {
-                assert(0);
             }
         }
+        return irBuilder.CreateLoad(ty, addr);
     }
-    return irBuilder.CreateLoad(ty, value);
 }
 
 llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
@@ -373,10 +446,10 @@ llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
 
 llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
     llvm::BasicBlock *initBB = llvm::BasicBlock::Create(llvmContext, "for.init", currFunc);
-    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(llvmContext, "for.cond", currFunc);
-    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(llvmContext, "for.then", currFunc);
-    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(llvmContext, "for.body", currFunc);
-    llvm::BasicBlock *lastBB = llvm::BasicBlock::Create(llvmContext, "for.last", currFunc);
+    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(llvmContext, "for.cond");
+    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(llvmContext, "for.then");
+    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(llvmContext, "for.body");
+    llvm::BasicBlock *lastBB = llvm::BasicBlock::Create(llvmContext, "for.last");
 
     breakTargetBBs.insert({forStmt, lastBB});
     continueTargetBBs.insert({forStmt, thenBB});
@@ -386,8 +459,9 @@ llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
     if (forStmt->initNode) {
         forStmt->initNode->AcceptVisitor(this);
     }
-
     irBuilder.CreateBr(condBB);
+
+    condBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(condBB);
     if (forStmt->condNode) {
         llvm::Value *val     = forStmt->condNode->AcceptVisitor(this);
@@ -397,18 +471,21 @@ llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
         irBuilder.CreateBr(bodyBB);
     }
 
+    bodyBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(bodyBB);
     if (forStmt->bodyNode) {
         forStmt->bodyNode->AcceptVisitor(this);
     }
     irBuilder.CreateBr(thenBB);
 
+    thenBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(thenBB);
     if (forStmt->thenNode) {
         forStmt->thenNode->AcceptVisitor(this);
     }
     irBuilder.CreateBr(condBB);
 
+    lastBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(lastBB);
     return nullptr;
 }
@@ -434,10 +511,13 @@ llvm::Value *CodeGen::VisitContinueStmt(ContinueStmt *continueStmt) {
 
 llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) {
     llvm::StringRef name(variableAssessExpr->token.ptr, variableAssessExpr->token.length);
-    std::pair<llvm::Value *, llvm::Type *> pair = localVarAddrTypeMap[name];
-    llvm::Value *value                          = pair.first;
+    std::pair<llvm::Value *, llvm::Type *> pair = GetVarByName(name);
+    llvm::Value *addr                           = pair.first;
     llvm::Type *ty                              = pair.second;
-    return irBuilder.CreateLoad(ty, value, name);
+    if (ty->isFunctionTy()) {
+        return addr;
+    }
+    return irBuilder.CreateLoad(ty, addr, name);
 }
 
 llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *expr) {
@@ -645,12 +725,12 @@ llvm::Value *CodeGen::VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberAr
 }
 
 llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
+    ClearVarScope();
+
     CFuncType *cFuncTy         = llvm::dyn_cast<CFuncType>(funcDeclStmt->cType.get());
     llvm::FunctionType *funcTy = llvm::dyn_cast<llvm::FunctionType>(cFuncTy->AcceptVisitor(this));
     Function *thisFunc =
         Function::Create(funcTy, GlobalValue::LinkageTypes::ExternalLinkage, cFuncTy->GetName(), llvmModule.get());
-    currFunc = thisFunc;
-
     AddGlobalVarToMap(cFuncTy->GetName(), thisFunc, funcTy);
 
     int i              = 0;
@@ -663,6 +743,9 @@ llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
         return nullptr;
     }
 
+    BasicBlock *entryBB = BasicBlock::Create(llvmContext, "entry", thisFunc);
+    currFunc            = thisFunc;
+    irBuilder.SetInsertPoint(entryBB);
     PushScope();
     // alloc for local var
     i = 0;
@@ -673,8 +756,6 @@ llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
         AddLocalVarToMap(arg.getName(), alloc, arg.getType());
     }
 
-    BasicBlock *entryBB = BasicBlock::Create(llvmContext, "entry", thisFunc);
-    irBuilder.SetInsertPoint(entryBB);
     funcDeclStmt->blockStmt->AcceptVisitor(this);
     PopScope();
 
@@ -773,7 +854,7 @@ void CodeGen::AddGlobalVarToMap(llvm::StringRef name, llvm::Value *addr, llvm::T
     globalVarAddrTypeMap.insert({name, {addr, ty}});
 }
 
-std::pair<llvm::Value *, llvm::Type *> CodeGen::GetLocalVarByName(llvm::StringRef name) {
+std::pair<llvm::Value *, llvm::Type *> CodeGen::GetVarByName(llvm::StringRef name) {
     for (auto it = localVarAddrTypeMap.rbegin(); it != localVarAddrTypeMap.rend(); it++) {
         if (it->find(name) != it->end()) {
             return (*it)[name];

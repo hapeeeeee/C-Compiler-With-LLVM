@@ -241,9 +241,22 @@ std::shared_ptr<CType> Sema::SemaTagDecl(std::vector<Member> &members, TagKind t
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindTagSymbolInCurrEnv(content);
     if (symbol && (mode == Mode::Normal)) {
-        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_undefined, content);
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
     }
     auto recordTy = std::make_shared<CRecordType>(content, members, tagKind);
+    if (mode == Mode::Normal) {
+        scope.AddTagSymbol(content, recordTy);
+    }
+    return recordTy;
+}
+
+std::shared_ptr<CType> Sema::SemaTagDecl(std::shared_ptr<CType> recordTy, Token &tok) {
+    auto ty                        = llvm::dyn_cast<CRecordType>(recordTy.get());
+    llvm::StringRef content        = ty->GetName();
+    std::shared_ptr<Symbol> symbol = scope.FindTagSymbolInCurrEnv(content);
+    if (symbol && (mode == Mode::Normal)) {
+        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
+    }
     if (mode == Mode::Normal) {
         scope.AddTagSymbol(content, recordTy);
     }
@@ -262,11 +275,11 @@ std::shared_ptr<CType> Sema::SemaAnonyTagDecl(std::vector<Member> &members, TagK
 std::shared_ptr<CType> Sema::SemaTagAccess(Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindTagSymbol(content);
-    if (!symbol && (mode == Mode::Normal)) {
-        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_undefined, content);
-    }
 
-    return symbol->cType;
+    if (symbol) {
+        return symbol->cType;
+    }
+    return nullptr;
 }
 
 std::shared_ptr<ASTNode> Sema::SemaFuncDecl(std::shared_ptr<CType> funcTy, std::shared_ptr<ASTNode> blockStmt, Token &tok) {

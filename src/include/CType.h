@@ -154,6 +154,8 @@ class CRecordType : public CType {
         return members;
     }
 
+    void SetMembers(const std::vector<Member> &members);
+
     TagKind GetTagKind() {
         return tagKind;
     }

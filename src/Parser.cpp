@@ -99,7 +99,6 @@ std::shared_ptr<CType> Parser::ParserDeclSpec() {
 /// @brief struct-union-spec : struct-or-union identifier "{" (decl-spec declarator)* "}"
 std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
     TagKind tagKind;
-    Token tmp;
     if (token.tokenTy == TokenType::KW_sturct) {
         tagKind = TagKind::kSturct;
     } else if (token.tokenTy == TokenType::KW_union) {
@@ -109,18 +108,43 @@ std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
         return nullptr;
     }
     Advance();
+
+    Token tmp = token;
+    // bool isAnony = false;
+    // if (token.tokenTy == TokenType::LeftBrace) {
+    //     isAnony = true;
+    // } else {
+    //     Consume(TokenType::Identifier);
+    // }
     bool isAnony = false;
-    if (token.tokenTy == TokenType::LeftBrace) {
+    if (token.tokenTy != TokenType::Identifier) {
         isAnony = true;
-    } else {
-        IsExcept(TokenType::Identifier);
+    }
+
+    Token tag = token;
+    if (token.tokenTy == TokenType::Identifier) {
         tmp = token;
         Consume(TokenType::Identifier);
     }
 
     // sturct A;
+    std::shared_ptr<CType> recordTy = nullptr;
+    if (!isAnony) {
+        recordTy = sema.SemaTagAccess(tmp);
+    }
+
+    if (!recordTy) {
+        llvm::StringRef name;
+        if (isAnony) {
+            name = CType::GenAnonyRecordName(tagKind);
+        } else {
+            name = llvm::StringRef(tmp.ptr, tmp.length);
+        }
+        recordTy = std::make_shared<CRecordType>(name, std::vector<Member>(), tagKind);
+    }
+
     if (token.tokenTy != TokenType::LeftBrace) {
-        return sema.SemaTagAccess(tmp);
+        return recordTy;
     }
 
     // sturct A{int a, b, *p; int **p;};
@@ -140,11 +164,10 @@ std::shared_ptr<CType> Parser::ParserDeclStructOrUnionSpec() {
     }
     sema.ExitScope();
     Consume(TokenType::RightBrace);
-    if (isAnony) {
-        return sema.SemaAnonyTagDecl(members, tagKind);
-    } else {
-        return sema.SemaTagDecl(members, tagKind, tmp);
-    }
+    auto rTy = llvm::dyn_cast<CRecordType>(recordTy.get());
+    rTy->SetMembers(members);
+
+    return sema.SemaTagDecl(recordTy, tmp);
 }
 
 /// @brief declarator : "*"* direct-declarator
@@ -837,13 +860,17 @@ bool Parser::IsFuncDecl() {
     Token begin = token;
     lexer.SaveState();
 
-    bool isFunc     = false;
-    auto baseTy     = ParserDeclSpec();
-    auto declarator = ParserDeclarator(baseTy, true);
-    if (declarator->cType->GetTypeKind() == CType::CTypeKind::TY_Func) {
-        isFunc = true;
-    }
+    bool isFunc = false;
+    auto baseTy = ParserDeclSpec();
 
+    if (token.tokenTy == TokenType::Semi) {
+        isFunc = false;
+    } else {
+        auto declarator = ParserDeclarator(baseTy, true);
+        if (declarator->cType->GetTypeKind() == CType::CTypeKind::TY_Func) {
+            isFunc = true;
+        }
+    }
     lexer.RestoreState();
     token = begin;
     sema.SetMode(Sema::Mode::Normal);

@@ -10,6 +10,7 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     auto program      = std::make_shared<Program>();
     program->fileName = lexer.GetFileName();
     while (token.tokenTy != TokenType::Eof) {
+        std::shared_ptr<ASTNode> node;
         if (IsFuncDecl()) {
             program->externDecls.push_back(ParserFuncDeclStmt());
         } else {

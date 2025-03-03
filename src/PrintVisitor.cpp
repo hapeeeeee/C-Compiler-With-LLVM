@@ -349,6 +349,8 @@ llvm::Value *PrintVisitor::VisitVariableAssessExpr(VariableAssessExpr *variableA
 llvm::Type *PrintVisitor::VisitCPrimaryType(CPrimaryType *ty) {
     if (ty->GetTypeKind() == CType::CTypeKind::TY_Int) {
         *out << "int ";
+    } else if (ty->GetTypeKind() == CType::CTypeKind::TY_Void) {
+        *out << "void ";
     }
     return nullptr;
 }

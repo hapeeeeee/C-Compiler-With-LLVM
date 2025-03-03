@@ -58,6 +58,7 @@ enum class TokenType {
     Identifier,          ///< variable name
     KW_sturct,           ///< struct
     KW_union,            ///< union
+    KW_void,             ///< void
     KW_int,              ///< int
     KW_if,               ///< if
     KW_else,             ///< else

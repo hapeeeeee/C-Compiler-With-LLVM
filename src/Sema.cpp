@@ -42,9 +42,9 @@ std::shared_ptr<ASTNode> Sema::SemaVariableDeclNode(std::shared_ptr<CType> cType
 
 std::shared_ptr<VariableDecl::InitValue>
 Sema::SemaDeclInitValue(std::shared_ptr<ASTNode> value, std::shared_ptr<CType> declTy, std::vector<int> &offsetList, Token &tok) {
-    if (value->cType->GetTypeKind() != declTy->GetTypeKind() && (mode == Mode::Normal)) {
-        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_miss, "same type");
-    }
+    // if (value->cType->GetTypeKind() != declTy->GetTypeKind() && (mode == Mode::Normal)) {
+    //     diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_miss, "same type");
+    // }
 
     auto initValue        = std::make_shared<VariableDecl::InitValue>();
     initValue->value      = value;
@@ -52,6 +52,7 @@ Sema::SemaDeclInitValue(std::shared_ptr<ASTNode> value, std::shared_ptr<CType> d
     initValue->offsetList = offsetList;
     return initValue;
 }
+namespace name {} // namespace name
 
 std::shared_ptr<ASTNode> Sema::SemaVariableAccessExprNode(Token &tok) {
     llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
@@ -283,11 +284,18 @@ std::shared_ptr<CType> Sema::SemaTagAccess(Token &tok) {
 }
 
 std::shared_ptr<ASTNode> Sema::SemaFuncDecl(std::shared_ptr<CType> funcTy, std::shared_ptr<ASTNode> blockStmt, Token &tok) {
-    llvm::StringRef content = llvm::StringRef(tok.ptr, tok.length);
-    // Check is redefined for symbol
+    CFuncType *currFuncTy          = llvm::dyn_cast<CFuncType>(funcTy.get());
+    currFuncTy->hasBody            = blockStmt ? true : false;
+    llvm::StringRef content        = llvm::StringRef(tok.ptr, tok.length);
     std::shared_ptr<Symbol> symbol = scope.FindObjSymbolInCurrEnv(content);
-    if (symbol && blockStmt && (mode == Mode::Normal)) {
-        diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
+    if (symbol) {
+        if (symbol->cType->GetTypeKind() != CType::CTypeKind::TY_Func) {
+            diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
+        }
+        CFuncType *symbolFuncTy = llvm::dyn_cast<CFuncType>(symbol->cType.get());
+        if (currFuncTy->hasBody && symbolFuncTy->hasBody && (mode == Mode::Normal)) {
+            diager.Report(llvm::SMLoc::getFromPointer(tok.ptr), diag::error_redefined, content);
+        }
     }
 
     if (!symbol && mode == Mode::Normal) {
@@ -314,6 +322,7 @@ std::shared_ptr<ASTNode> Sema::SemaFuncCall(std::shared_ptr<ASTNode> leftNode, s
     node->leftNode = leftNode;
     node->args     = params;
     node->token    = leftNode->token;
+    node->cType    = funcTy->GetRetTy();
     return node;
 }
 

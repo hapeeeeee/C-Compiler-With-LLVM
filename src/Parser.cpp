@@ -12,9 +12,12 @@ std::shared_ptr<Program> Parser::ParserProgram() {
     while (token.tokenTy != TokenType::Eof) {
         std::shared_ptr<ASTNode> node;
         if (IsFuncDecl()) {
-            program->externDecls.push_back(ParserFuncDeclStmt());
+            node = ParserFuncDeclStmt();
         } else {
-            program->externDecls.push_back(ParserDeclStmt(true));
+            node = ParserDeclStmt(true);
+        }
+        if (node) {
+            program->externDecls.push_back(node);
         }
     }
     IsExcept(TokenType::Eof);
@@ -89,6 +92,10 @@ std::shared_ptr<CType> Parser::ParserDeclSpec() {
     if (token.tokenTy == TokenType::KW_int) {
         Advance();
         return CType::IntType;
+    } else if (token.tokenTy == TokenType::KW_void) {
+        Advance();
+        return CType::VoidType;
+
     } else if (token.tokenTy == TokenType::KW_sturct || token.tokenTy == TokenType::KW_union) {
         return ParserDeclStructOrUnionSpec();
     }
@@ -847,7 +854,7 @@ std::shared_ptr<CType> Parser::ParserType() {
 }
 
 bool Parser::IsTypeName(TokenType ty) {
-    if (ty == TokenType::KW_int) {
+    if (ty == TokenType::KW_int || ty == TokenType::KW_void) {
         return true;
     } else if (ty == TokenType::KW_sturct || ty == TokenType::KW_union) {
         return true;

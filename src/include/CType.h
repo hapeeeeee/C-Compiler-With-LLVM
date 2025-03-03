@@ -33,10 +33,11 @@ enum TagKind {
 /// specific types such as `int`.
 class CType {
   public:
-    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array, TY_Record, TY_Func };
+    enum class CTypeKind { TY_Int = 0, TY_Point, TY_Array, TY_Record, TY_Func, TY_Void };
 
   public:
     static std::shared_ptr<CType> IntType;
+    static std::shared_ptr<CType> VoidType;
 
   public:
     CType(int size, int align, CTypeKind kind) : size(size), align(align), kind(kind) {
@@ -189,6 +190,9 @@ struct Param {
 };
 
 class CFuncType : public CType {
+  public:
+    bool hasBody{false};
+
   public:
     CFuncType(llvm::StringRef name, const std::vector<Param> &params, std::shared_ptr<CType> retTy);
 

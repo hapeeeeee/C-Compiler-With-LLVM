@@ -5,7 +5,8 @@ int RoundUp(int x, int align) {
     return (x + align - 1) & ~(align - 1);
 }
 
-std::shared_ptr<CType> CType::IntType = std::make_shared<CPrimaryType>(4, 4, CTypeKind::TY_Int);
+std::shared_ptr<CType> CType::IntType  = std::make_shared<CPrimaryType>(4, 4, CTypeKind::TY_Int);
+std::shared_ptr<CType> CType::VoidType = std::make_shared<CPrimaryType>(0, 0, CTypeKind::TY_Void);
 
 llvm::StringRef CType::GenAnonyRecordName(TagKind tagKind) {
     static long long idx = 0;

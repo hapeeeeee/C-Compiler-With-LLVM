@@ -68,6 +68,8 @@ class CodeGen : public Visitor, public TypeVisitor {
     void PopScope();
     void ClearVarScope();
 
+    void CastValue(llvm::Value *&val, llvm::Type *destTy); ///< cast llvm::Value to destTy, Such as llvm::int -> llvm::ptr
+
     void AddLocalVarToMap(llvm::StringRef name, llvm::Value *val, llvm::Type *ty);
     void AddGlobalVarToMap(llvm::StringRef name, llvm::Value *val, llvm::Type *ty);
     std::pair<llvm::Value *, llvm::Type *> GetVarByName(llvm::StringRef name);

@@ -94,6 +94,8 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "struct";
     case TokenType::KW_union:
         return "union";
+    case TokenType::KW_void:
+        return "void";
     case TokenType::Identifier:
         return "Identifier";
     case TokenType::KW_int:
@@ -459,6 +461,8 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_union;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "return") {
         tok.tokenTy = TokenType::KW_return;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "void") {
+        tok.tokenTy = TokenType::KW_void;
     }
 }
 

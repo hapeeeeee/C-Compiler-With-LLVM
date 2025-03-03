@@ -31,6 +31,15 @@ CRecordType::CRecordType(llvm::StringRef name, std::vector<Member> members, TagK
     }
 }
 
+void CRecordType::SetMembers(const std::vector<Member> &members) {
+    this->members = members;
+    if (tagKind == TagKind::kSturct) {
+        UpdateStructOffest();
+    } else {
+        UpdateUnionOffest();
+    }
+}
+
 void CRecordType::UpdateStructOffest() {
     int offset = 0, maxAlign = 0, maxSize = 0, maxSizeIdx = 0, idx = 0;
     int totalSize = 0;

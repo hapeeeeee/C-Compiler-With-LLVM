@@ -242,11 +242,13 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorArraySuffix(std::shared_ptr
     if (token.tokenTy != TokenType::LeftBracket) {
         return baseType;
     }
-
     Consume(TokenType::LeftBracket);
-    IsExcept(TokenType::Number);
-    int count = token.value;
-    Consume(TokenType::Number);
+    int count = -1;
+    if (token.tokenTy != TokenType::RightBracket) {
+        IsExcept(TokenType::Number);
+        count = token.value;
+        Consume(TokenType::Number);
+    }
     Consume(TokenType::RightBracket);
     return std::make_shared<CArrayType>(ParserDirectDeclaratorArraySuffix(baseType, isGlobal), count);
 }
@@ -264,7 +266,12 @@ std::shared_ptr<CType> Parser::ParserDirectDeclaratorFuncSuffix(std::shared_ptr<
         auto declNode = ParserDeclarator(baseType, false);
 
         Param p;
-        p.ty   = declNode->cType;
+        if (declNode->cType->GetTypeKind() == CType::CTypeKind::TY_Array) {
+            p.ty = std::make_shared<CPointType>(declNode->cType);
+        } else {
+            p.ty = declNode->cType;
+        }
+
         p.name = llvm::StringRef(declNode->token.ptr, declNode->token.length);
         params.push_back(p);
     }
@@ -288,9 +295,11 @@ bool Parser::ParserInitializer(std::vector<std::shared_ptr<VariableDecl::InitVal
         Consume(TokenType::LeftBrace);
 
         if (declTy->GetTypeKind() == CType::CTypeKind::TY_Array) {
-            auto arrTy = llvm::dyn_cast<CArrayType>(declTy.get());
-            int size   = arrTy->GetElementCount(); // 2
-            for (int i = 0; i < size; i++) {
+            auto arrTy  = llvm::dyn_cast<CArrayType>(declTy.get());
+            int size    = arrTy->GetElementCount(); // 2
+            bool isFlex = size < 0;
+            int i       = 0;
+            for (; i < size || isFlex; i++) {
                 if (i > 0 && token.tokenTy == TokenType::Comma) {
                     Consume(TokenType::Comma);
                 }
@@ -300,6 +309,9 @@ bool Parser::ParserInitializer(std::vector<std::shared_ptr<VariableDecl::InitVal
                 if (isEnd) {
                     break;
                 }
+            }
+            if (isFlex) {
+                arrTy->SetElementCount(i);
             }
         } else if (declTy->GetTypeKind() == CType::CTypeKind::TY_Record) {
             auto recordTy = llvm::dyn_cast<CRecordType>(declTy.get());

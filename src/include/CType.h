@@ -123,6 +123,11 @@ class CArrayType : public CType {
         return elementCount;
     }
 
+    void SetElementCount(int count) {
+        elementCount = count;
+        size         = elementType->GetSize() * elementCount;
+    }
+
     llvm::Type *AcceptVisitor(TypeVisitor *v) override {
         return v->VisitCArrayType(this);
     }

@@ -53,8 +53,9 @@ int main(int argc, char *argv[]) {
 
     CodeGen codegen(program);
     auto &module = codegen.GetModule();
-    // module->print(llvm::outs(), nullptr);
+
     assert(!llvm::verifyModule(*module));
+    // module->print(llvm::outs(), nullptr);
     {
         llvm::EngineBuilder builder(std::move(module));
         std::string error;

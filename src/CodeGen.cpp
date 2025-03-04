@@ -121,10 +121,6 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         val = irBuilder.CreateICmpNE(left, irBuilder.getInt32(0));
         irBuilder.CreateCondBr(val, trueBB, nextBB);
 
-        trueBB->insertInto(currFunc);
-        irBuilder.SetInsertPoint(trueBB);
-        irBuilder.CreateBr(mergeBB);
-
         nextBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(nextBB);
         // Note: The right-hand side block code generation here might create new basic blocks. After
@@ -136,6 +132,10 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         CastValue(right, irBuilder.getInt32Ty());
         right = irBuilder.CreateICmpNE(right, irBuilder.getInt32(0));
         right = irBuilder.CreateZExt(right, irBuilder.getInt32Ty());
+        irBuilder.CreateBr(mergeBB);
+
+        trueBB->insertInto(currFunc);
+        irBuilder.SetInsertPoint(trueBB);
         irBuilder.CreateBr(mergeBB);
 
         mergeBB->insertInto(currFunc);
@@ -153,7 +153,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         //      \     /
         //      mergeBB
         auto falseBB = llvm::BasicBlock::Create(llvmContext, "falseBB");
-        auto nextBB  = llvm::BasicBlock::Create(llvmContext, "nextBB", currFunc);
+        auto nextBB  = llvm::BasicBlock::Create(llvmContext, "nextBB");
         auto mergeBB = llvm::BasicBlock::Create(llvmContext, "mergeBB");
 
         llvm::Value *left = binaryExpr->leftExpr->AcceptVisitor(this);
@@ -161,6 +161,7 @@ llvm::Value *CodeGen::VisitBinaryExpr(BinaryExpr *binaryExpr) {
         val = irBuilder.CreateICmpNE(left, irBuilder.getInt32(0));
         irBuilder.CreateCondBr(val, nextBB, falseBB);
 
+        nextBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(nextBB);
         // Note: The right-hand side block code generation here might create new basic blocks. After
         // the generation is complete, the insertPoint might no longer be at nextBB, so the
@@ -431,12 +432,12 @@ llvm::Value *CodeGen::VisitVariableDecl(VariableDecl *variableDecl) {
 
 llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
     llvm::BasicBlock *condBB = llvm::BasicBlock::Create(llvmContext, "cond", currFunc);
-    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(llvmContext, "then", currFunc);
+    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(llvmContext, "then");
     llvm::BasicBlock *elseBB = nullptr;
     if (ifStmt->elseStmt) {
-        elseBB = llvm::BasicBlock::Create(llvmContext, "else", currFunc);
+        elseBB = llvm::BasicBlock::Create(llvmContext, "else");
     }
-    llvm::BasicBlock *lastBB = llvm::BasicBlock::Create(llvmContext, "last", currFunc);
+    llvm::BasicBlock *lastBB = llvm::BasicBlock::Create(llvmContext, "last");
     irBuilder.CreateBr(condBB);
     irBuilder.SetInsertPoint(condBB);
     llvm::Value *val = ifStmt->condExpr->AcceptVisitor(this);
@@ -444,19 +445,23 @@ llvm::Value *CodeGen::VisitIfStmt(IfStmt *ifStmt) {
     llvm::Value *condVal = irBuilder.CreateICmpNE(val, irBuilder.getInt32(0));
     if (ifStmt->elseStmt) {
         irBuilder.CreateCondBr(condVal, thenBB, elseBB);
+        thenBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(thenBB);
         ifStmt->thenStmt->AcceptVisitor(this);
         irBuilder.CreateBr(lastBB);
 
+        elseBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(elseBB);
         ifStmt->elseStmt->AcceptVisitor(this);
         irBuilder.CreateBr(lastBB);
     } else {
         irBuilder.CreateCondBr(condVal, thenBB, lastBB);
+        thenBB->insertInto(currFunc);
         irBuilder.SetInsertPoint(thenBB);
         ifStmt->thenStmt->AcceptVisitor(this); // if {then(break) }
         irBuilder.CreateBr(lastBB);            // death
     }
+    lastBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(lastBB);
     return nullptr;
 }
@@ -539,20 +544,13 @@ llvm::Value *CodeGen::VisitVariableAssessExpr(VariableAssessExpr *variableAssess
 }
 
 llvm::Value *CodeGen::VisitSizeofExpr(SizeofExpr *expr) {
-    llvm::Type *ty = nullptr;
+    std::shared_ptr<CType> ty = nullptr;
     if (expr->expr) {
-        ty = expr->expr->cType->AcceptVisitor(this);
+        ty = expr->expr->cType;
     } else {
-        ty = expr->sizeofTY->AcceptVisitor(this);
+        ty = expr->sizeofTY;
     }
-    if (ty->isPointerTy()) {
-        return irBuilder.getInt32(8);
-    } else if (ty->isIntegerTy()) {
-        return irBuilder.getInt32(4);
-    } else {
-        assert(0);
-        return nullptr;
-    }
+    return irBuilder.getInt32(ty->GetSize());
 }
 
 llvm::Value *CodeGen::VisitUnaryExpr(UnaryExpr *unaryExpr) {
@@ -686,8 +684,14 @@ llvm::Value *CodeGen::VisitPostSubscriptExpr(PostSubscriptExpr *postSubscriptExp
     llvm::Type *elemTy  = postSubscriptExpr->cType->AcceptVisitor(this);
     llvm::Value *val    = postSubscriptExpr->leftNode->AcceptVisitor(this);
     llvm::Value *offest = postSubscriptExpr->node->AcceptVisitor(this);
-
-    llvm::Value *addr = irBuilder.CreateInBoundsGEP(elemTy, llvm::dyn_cast<LoadInst>(val)->getPointerOperand(), {offest});
+    llvm::Value *addr   = nullptr;
+    if (val->getType()->isPointerTy()) {
+        addr = irBuilder.CreateInBoundsGEP(elemTy, val, {offest});
+    } else if (val->getType()->isArrayTy()) {
+        addr = irBuilder.CreateInBoundsGEP(elemTy, llvm::dyn_cast<LoadInst>(val)->getPointerOperand(), {offest});
+    } else {
+        assert(0);
+    }
     return irBuilder.CreateLoad(elemTy, addr);
 }
 
@@ -749,15 +753,12 @@ llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
     CFuncType *cFuncTy         = llvm::dyn_cast<CFuncType>(funcDeclStmt->cType.get());
     llvm::FunctionType *funcTy = llvm::dyn_cast<llvm::FunctionType>(cFuncTy->AcceptVisitor(this));
     const auto &params         = cFuncTy->GetParams();
-
-    Function *thisFunc = llvmModule->getFunction(cFuncTy->GetName());
+    void *a                    = 0;
+    Function *thisFunc         = llvmModule->getFunction(cFuncTy->GetName());
 
     if (!thisFunc) {
         thisFunc = Function::Create(funcTy, GlobalValue::LinkageTypes::ExternalLinkage, cFuncTy->GetName(), llvmModule.get());
         AddGlobalVarToMap(cFuncTy->GetName(), thisFunc, funcTy);
-
-        thisFunc->print(llvm::outs());
-        llvm::outs() << "\n";
 
         int i = 0;
         for (auto &arg : thisFunc->args()) {
@@ -786,7 +787,7 @@ llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
     funcDeclStmt->blockStmt->AcceptVisitor(this);
 
     llvm::BasicBlock &block = currFunc->back();
-    if (block.empty() || block.back().isTerminator()) {
+    if (block.empty() || !block.back().isTerminator()) {
         if (cFuncTy->GetRetTy()->GetTypeKind() == CType::CTypeKind::TY_Void) {
             irBuilder.CreateRetVoid();
         } else {
@@ -796,10 +797,7 @@ llvm::Value *CodeGen::VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) {
         }
     }
     PopScope();
-    // verifyFunction(*thisFunc);
-    if (verifyModule(*llvmModule, &llvm::outs())) {
-        // llvmModule->print(llvm::outs(), nullptr);
-    }
+    verifyFunction(*thisFunc);
     return nullptr;
 }
 
@@ -904,6 +902,11 @@ void CodeGen::CastValue(llvm::Value *&val, llvm::Type *destTy) {
     } else if (val->getType()->isPointerTy()) {
         if (destTy->isIntegerTy()) {
             val = irBuilder.CreatePtrToInt(val, destTy);
+        }
+    } else if (val->getType()->isArrayTy()) {
+        if (destTy->isPointerTy()) {
+            auto *load = llvm::dyn_cast<LoadInst>(val);
+            val        = load->getPointerOperand();
         }
     }
 }

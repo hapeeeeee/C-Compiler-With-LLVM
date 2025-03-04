@@ -45,6 +45,9 @@ class CodeGen : public Visitor, public TypeVisitor {
     llvm::Value *VisitFuncDeclStmt(FuncDeclStmt *funcDeclStmt) override;
     llvm::Value *VisitReturnStmt(ReturnStmt *returnStmt) override;
     llvm::Value *VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) override;
+    llvm::Value *VisitSwitchStmt(SwitchStmt *switchStmt) override;
+    llvm::Value *VisitCaseStmt(CaseStmt *caseStmt) override;
+    llvm::Value *VisitDefaultStmt(DefaultStmt *defaultStmt) override;
 
     llvm::Type *VisitCPrimaryType(CPrimaryType *ty) override;
     llvm::Type *VisitCPointType(CPointType *ty) override;
@@ -60,6 +63,7 @@ class CodeGen : public Visitor, public TypeVisitor {
 
     llvm::DenseMap<ASTNode *, llvm::BasicBlock *> breakTargetBBs;    ///< Target block for the break statement
     llvm::DenseMap<ASTNode *, llvm::BasicBlock *> continueTargetBBs; ///< Target block for the continue statement
+    llvm::SmallVector<llvm::SwitchInst *> switchBBs;
     llvm::SmallVector<llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>>> localVarAddrTypeMap; // local var in function
     llvm::StringMap<std::pair<llvm::Value *, llvm::Type *>> globalVarAddrTypeMap;                   // function & global var
 

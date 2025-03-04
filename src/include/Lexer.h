@@ -67,6 +67,9 @@ enum class TokenType {
     KW_continue,         ///< continue
     KW_Sizeof,           ///< sizeof
     KW_return,           ///< return
+    KW_switch,           ///< switch
+    KW_case,             ///< case
+    KW_default,          ///< default
     Eof                  ///< end of file
 };
 

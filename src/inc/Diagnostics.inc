@@ -9,6 +9,9 @@ DIAG(error_unknown_char, Error, "unknown char '{0}'")
 DIAG(error_except, Error, "except '{0}', but found '{1}'")
 DIAG(error_break_not_in_loop, Error, "'break' not in loop or switch stmt")
 DIAG(error_continue_not_in_loop, Error, "'continue' not in loop stmt")
+DIAG(error_case_not_in_switch, Error, "'case' not in switch stmt")
+DIAG(error_default_not_in_switch, Error, "'default' not in switch stmt")
+DIAG(error_repeat_default_in_switch, Error, "switch stmt only be allowed to own one default")
 
 /// Sema
 DIAG(error_redefined, Error, "redefined symbol '{0}'")

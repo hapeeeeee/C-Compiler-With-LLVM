@@ -37,6 +37,28 @@ llvm::Value *PrintVisitor::VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallE
     return nullptr;
 }
 
+llvm::Value *PrintVisitor::VisitSwitchStmt(SwitchStmt *switchStmt) {
+    *out << "switch (";
+    switchStmt->expr->AcceptVisitor(this);
+    *out << ")";
+    switchStmt->stmt->AcceptVisitor(this);
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitCaseStmt(CaseStmt *caseStmt) {
+    *out << "case ";
+    caseStmt->expr->AcceptVisitor(this);
+    *out << ":";
+    caseStmt->stmt->AcceptVisitor(this);
+    return nullptr;
+}
+
+llvm::Value *PrintVisitor::VisitDefaultStmt(DefaultStmt *defaultStmt) {
+    *out << "default :";
+    defaultStmt->stmt->AcceptVisitor(this);
+    return nullptr;
+}
+
 llvm::Value *PrintVisitor::VisitDeclStmts(DeclStmts *declStmts) {
     int i = 0, size = declStmts->nodeVec.size();
     for (auto node : declStmts->nodeVec) {

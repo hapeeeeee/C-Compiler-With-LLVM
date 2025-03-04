@@ -64,6 +64,7 @@ class Parser {
     std::vector<std::shared_ptr<ASTNode>> nodesContainBreak;    ///< AST nodes for loop statements containing
                                                                 ///< break statements and switch statements
     std::vector<std::shared_ptr<ASTNode>> nodesContainContinue; ///< AST nodes for loop statements containing continue statements
+    std::vector<std::shared_ptr<ASTNode>> nodesContainSwitch; ///< AST nodes for switch statements containing continue statements
 
   private:
     std::shared_ptr<ASTNode> ParserFuncDeclStmt();
@@ -90,6 +91,9 @@ class Parser {
     std::shared_ptr<ASTNode> ParserBreakStmt();
     std::shared_ptr<ASTNode> ParserContinueStmt();
     std::shared_ptr<ASTNode> ParserReturnStmt();
+    std::shared_ptr<ASTNode> ParserSwitchStmt();
+    std::shared_ptr<ASTNode> ParserCaseStmt();
+    std::shared_ptr<ASTNode> ParserDefaultStmt();
 
     std::shared_ptr<ASTNode> ParserExpr();
     std::shared_ptr<ASTNode> ParserAssignExpr();

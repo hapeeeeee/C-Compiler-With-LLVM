@@ -59,6 +59,12 @@ std::shared_ptr<ASTNode> Parser::ParserStmt() {
         return ParserBlockStmt();
     } else if (token.tokenTy == TokenType::KW_return) {
         return ParserReturnStmt();
+    } else if (token.tokenTy == TokenType::KW_switch) {
+        return ParserSwitchStmt();
+    } else if (token.tokenTy == TokenType::KW_case) {
+        return ParserCaseStmt();
+    } else if (token.tokenTy == TokenType::KW_default) {
+        return ParserDefaultStmt();
     } else { ///< expr-stmt
         return ParserExprStmt();
     }
@@ -454,6 +460,73 @@ std::shared_ptr<ASTNode> Parser::ParserReturnStmt() {
         node->expr = ParserExpr();
     }
     Consume(TokenType::Semi);
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::ParserSwitchStmt() {
+    auto node = std::make_shared<SwitchStmt>();
+    nodesContainBreak.push_back(node);
+    nodesContainSwitch.push_back(node);
+
+    Consume(TokenType::KW_switch);
+    Consume(TokenType::LeftParent);
+
+    node->expr = ParserExpr();
+
+    Consume(TokenType::RightParent);
+    node->stmt = ParserStmt();
+
+    nodesContainBreak.pop_back();
+    nodesContainSwitch.pop_back();
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::ParserCaseStmt() {
+    if (nodesContainSwitch.size() == 0) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr), diag::error_case_not_in_switch);
+    }
+
+    Consume(TokenType::KW_case);
+    auto node  = std::make_shared<CaseStmt>();
+    node->expr = ParserExpr();
+
+    Consume(TokenType::Colon);
+
+    auto blockStmt = std::make_shared<BlockStmts>();
+    while (token.tokenTy != TokenType::KW_case && token.tokenTy != TokenType::KW_default &&
+           token.tokenTy != TokenType::RightBrace) {
+        auto stmt = ParserStmt();
+        if (stmt) {
+            blockStmt->nodeVec.push_back(stmt);
+        }
+    }
+    node->stmt = blockStmt;
+
+    return node;
+}
+
+std::shared_ptr<ASTNode> Parser::ParserDefaultStmt() {
+    if (nodesContainSwitch.size() == 0) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr), diag::error_default_not_in_switch);
+    }
+    auto switchNode = llvm::dyn_cast<SwitchStmt>(nodesContainSwitch.back().get());
+    if (switchNode->defaultStmt) {
+        GetDiagnostics().Report(llvm::SMLoc::getFromPointer(token.ptr), diag::error_repeat_default_in_switch);
+    }
+
+    Consume(TokenType::KW_default);
+    Consume(TokenType::Colon);
+
+    auto node      = std::make_shared<DefaultStmt>();
+    auto blockStmt = std::make_shared<BlockStmts>();
+    while (token.tokenTy != TokenType::KW_case && token.tokenTy != TokenType::RightBrace) {
+        auto stmt = ParserStmt();
+        if (stmt) {
+            blockStmt->nodeVec.push_back(stmt);
+        }
+    }
+    node->stmt              = blockStmt;
+    switchNode->defaultStmt = node;
     return node;
 }
 

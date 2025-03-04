@@ -32,6 +32,9 @@ class ForStmt;
 class BreakStmt;
 class ContinueStmt;
 class ReturnStmt;
+class SwitchStmt;
+class CaseStmt;
+class DefaultStmt;
 
 /// @brief Base class for the visitor in the Visitor design pattern.
 /// @details This class defines a set of pure virtual functions to visit different nodes of an
@@ -63,6 +66,9 @@ class Visitor {
     virtual llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr)       = 0;
     virtual llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) = 0;
     virtual llvm::Value *VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr)          = 0;
+    virtual llvm::Value *VisitSwitchStmt(SwitchStmt *switchStmt)                            = 0;
+    virtual llvm::Value *VisitCaseStmt(CaseStmt *caseStmt)                                  = 0;
+    virtual llvm::Value *VisitDefaultStmt(DefaultStmt *defaultStmt)                         = 0;
     virtual llvm::Value *VisitNumberExpr(NumberExpr *numberExpr)                            = 0;
     virtual llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr)    = 0;
 };
@@ -102,6 +108,9 @@ class ASTNode {
         ND_PostFuncCall,
         ND_NumberExpr,
         ND_VariableAssessExpr,
+        ND_SwitchStmt,
+        ND_CaseStmt,
+        ND_DefaultStmt,
         ND_AssignExpr,
     };
 
@@ -508,6 +517,60 @@ class PostFuncCallExpr : public ASTNode {
 
     static bool classof(const ASTNode *node) {
         return node->nodeKind == Nodekind::ND_PostFuncCall;
+    }
+};
+
+class SwitchStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> expr;
+    std::shared_ptr<ASTNode> stmt;
+    std::shared_ptr<ASTNode> defaultStmt{nullptr};
+
+  public:
+    SwitchStmt() : ASTNode(Nodekind::ND_SwitchStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitSwitchStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_SwitchStmt;
+    }
+};
+
+class CaseStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> expr;
+    std::shared_ptr<ASTNode> stmt;
+
+  public:
+    CaseStmt() : ASTNode(Nodekind::ND_CaseStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitCaseStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_CaseStmt;
+    }
+};
+
+class DefaultStmt : public ASTNode {
+  public:
+    std::shared_ptr<ASTNode> stmt;
+
+  public:
+    DefaultStmt() : ASTNode(Nodekind::ND_DefaultStmt) {
+    }
+
+    llvm::Value *AcceptVisitor(Visitor *v) override {
+        return v->VisitDefaultStmt(this);
+    }
+
+    static bool classof(const ASTNode *node) {
+        return node->nodeKind == Nodekind::ND_DefaultStmt;
     }
 };
 

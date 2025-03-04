@@ -106,6 +106,10 @@ llvm::StringRef Token::GetSpellingText(TokenType ty) {
         return "sizeof";
     case TokenType::KW_return:
         return "return";
+    case TokenType::KW_switch:
+        return "switch";
+    case TokenType::KW_case:
+        return "case";
     default:
         llvm::llvm_unreachable_internal();
         break;
@@ -463,6 +467,12 @@ void Lexer::KeyWordHandle(Token &tok) {
         tok.tokenTy = TokenType::KW_return;
     } else if (llvm::StringRef(tok.ptr, tok.length) == "void") {
         tok.tokenTy = TokenType::KW_void;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "switch") {
+        tok.tokenTy = TokenType::KW_switch;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "case") {
+        tok.tokenTy = TokenType::KW_case;
+    } else if (llvm::StringRef(tok.ptr, tok.length) == "default") {
+        tok.tokenTy = TokenType::KW_default;
     }
 }
 

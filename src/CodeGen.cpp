@@ -499,14 +499,21 @@ llvm::Value *CodeGen::VisitForStmt(ForStmt *forStmt) {
     if (forStmt->bodyNode) {
         forStmt->bodyNode->AcceptVisitor(this);
     }
-    irBuilder.CreateBr(thenBB);
 
-    thenBB->insertInto(currFunc);
-    irBuilder.SetInsertPoint(thenBB);
-    if (forStmt->thenNode) {
-        forStmt->thenNode->AcceptVisitor(this);
+    if (bodyBB->empty() || !bodyBB->back().isTerminator()) {
+        if (forStmt->thenNode) {
+            irBuilder.CreateBr(thenBB);
+        } else {
+            irBuilder.CreateBr(condBB);
+        }
     }
-    irBuilder.CreateBr(condBB);
+
+    if (forStmt->thenNode) {
+        thenBB->insertInto(currFunc);
+        irBuilder.SetInsertPoint(thenBB);
+        forStmt->thenNode->AcceptVisitor(this);
+        irBuilder.CreateBr(condBB);
+    }
 
     lastBB->insertInto(currFunc);
     irBuilder.SetInsertPoint(lastBB);
@@ -824,6 +831,72 @@ llvm::Value *CodeGen::VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) 
         i++;
     }
     return irBuilder.CreateCall(funcTy, funcAddr, args);
+}
+
+llvm::Value *CodeGen::VisitSwitchStmt(SwitchStmt *switchStmt) {
+    llvm::Value *cond = switchStmt->expr->AcceptVisitor(this);
+
+    auto *defaultBB  = llvm::BasicBlock::Create(llvmContext, "switch.default");
+    auto *thenBB     = llvm::BasicBlock::Create(llvmContext, "switch.then");
+    auto *switchInst = irBuilder.CreateSwitch(cond, defaultBB);
+
+    breakTargetBBs.insert({switchStmt, thenBB});
+    switchBBs.push_back(switchInst);
+
+    /// Gen Case and Default stmt
+    switchStmt->stmt->AcceptVisitor(this);
+
+    /// if there are no default stmt in switch, gen a null default
+    if (!switchStmt->defaultStmt) {
+        defaultBB->insertInto(currFunc);
+        irBuilder.SetInsertPoint(defaultBB);
+        irBuilder.CreateBr(thenBB);
+    }
+
+    /// if there are  default stmt in switch and it is null, gen a null default
+    if (defaultBB->empty() || !defaultBB->back().isTerminator()) {
+        irBuilder.CreateBr(thenBB);
+    }
+
+    breakTargetBBs.erase(switchStmt);
+    switchBBs.pop_back();
+
+    thenBB->insertInto(currFunc);
+    irBuilder.SetInsertPoint(thenBB);
+
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitCaseStmt(CaseStmt *caseStmt) {
+    auto *switchInst       = switchBBs.back();
+    llvm::Value *caseValue = caseStmt->expr->AcceptVisitor(this);
+    CastValue(caseValue, switchInst->getCondition()->getType());
+
+    /// like case 'B':case 'C'
+    auto *caseBB = llvm::BasicBlock::Create(llvmContext, "case");
+    if (switchInst->getNumCases() > 0) {
+        const auto &lastCase = switchInst->case_begin() + (switchInst->getNumCases() - 1);
+        auto *lastCaseBB     = lastCase->getCaseSuccessor();
+
+        if (lastCaseBB->empty() || !lastCaseBB->back().isTerminator()) {
+            irBuilder.CreateBr(caseBB);
+        }
+    }
+
+    llvm::ConstantInt *constant = llvm::dyn_cast<llvm::ConstantInt>(caseValue);
+    if (!constant) {
+        assert(0 && "case value must be constant");
+    }
+    switchInst->addCase(constant, caseBB);
+
+    caseBB->insertInto(currFunc);
+    irBuilder.SetInsertPoint(caseBB);
+    caseStmt->stmt->AcceptVisitor(this);
+
+    return nullptr;
+}
+
+llvm::Value *CodeGen::VisitDefaultStmt(DefaultStmt *defaultStmt) {
 }
 
 llvm::Type *CodeGen::VisitCPrimaryType(CPrimaryType *ty) {

@@ -29,6 +29,9 @@ class PrintVisitor : public Visitor, public TypeVisitor {
     llvm::Value *VisitPostMemberDotExpr(PostMemberDotExpr *postMemberDotExpr) override;
     llvm::Value *VisitPostMemberArrowExpr(PostMemberArrowExpr *postMemberArrowExpr) override;
     llvm::Value *VisitPostFuncCallExpr(PostFuncCallExpr *postFuncCallExpr) override;
+    llvm::Value *VisitSwitchStmt(SwitchStmt *switchStmt) override;
+    llvm::Value *VisitCaseStmt(CaseStmt *caseStmt) override;
+    llvm::Value *VisitDefaultStmt(DefaultStmt *defaultStmt) override;
     llvm::Value *VisitNumberExpr(NumberExpr *numberExpr) override;
     llvm::Value *VisitVariableAssessExpr(VariableAssessExpr *variableAssessExpr) override;
 
